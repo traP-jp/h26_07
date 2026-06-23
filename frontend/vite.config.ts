@@ -1,20 +1,40 @@
 import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import ui from '@nuxt/ui/vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    ui(),
-    vueDevTools(),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [
+      vue(),
+      ui(),
+      vueDevTools(),
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
     },
-  },
+    server: {
+      proxy: {
+        '/api': {
+          target: env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              const traqId = env.MY_TRAQ_ID
+              if (traqId) {
+                proxyReq.setHeader('X-Forwarded-User', traqId)
+              }
+            })
+          },
+        },
+      },
+    },
+  }
 })

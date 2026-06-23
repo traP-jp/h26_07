@@ -13,4 +13,5 @@ blockExoticSubdeps: true
 # インストール時にスクリプト実行を伴うパッケージ
 allowBuilds:
   esbuild: true
+  msw: true
   vue-demi: true
