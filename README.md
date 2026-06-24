@@ -4,7 +4,7 @@
 
 1. [mise](https://mise.jdx.dev/) をインストール
    [インストール方法](https://mise.jdx.dev/installing-mise.html)
-   面倒な人のための一例
+   面倒な人のための一例(bash)
    ```sh
    $ sudo apt install -y extrepo
    $ sudo extrepo enable mise
