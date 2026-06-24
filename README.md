@@ -21,6 +21,7 @@
     $ mise trust
     $ mise install
     $ corepack enable
+    $ mise run init
     ```
 4. バージョンを確認
    ```sh
@@ -34,3 +35,21 @@
    $ pnpm -v
    11.8.0
    ```
+
+## 開発サーバー
+
+```sh
+$ mise run backend
+$ mise run frontend
+```
+
+## バックエンド開発
+
+```sh
+$ cd backend
+$ mise run dev # バックエンドサーバーを起動
+
+$ mise run fmt # コードを整形
+
+$ mise run test # テストを実行
+```

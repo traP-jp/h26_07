@@ -1,0 +1,9 @@
+.git
+.gitignore
+Dockerfile
+
+bin/
+tmp/
+
+**/*_test.go
+**/.DS_Store
