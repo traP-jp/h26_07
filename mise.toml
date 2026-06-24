@@ -7,7 +7,12 @@ description = "開発環境を初期化"
 run = [
   "pnpm --dir frontend install",
   "mise --cd backend run init",
+  "mise run hooks:install",
 ]
+
+[tasks."hooks:install"]
+description = "Git hooks を有効化"
+run = "git config core.hooksPath .githooks"
 
 [tasks."frontend:gen:api-schema"]
 description = "フロントエンド用の API スキーマ型を生成"
