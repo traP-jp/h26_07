@@ -725,9 +725,7 @@ type EmptyObject = map[string]interface{}
 
 // Error defines model for Error.
 type Error struct {
-	Code        string `json:"code"`
-	Description string `json:"description"`
-	Message     string `json:"message"`
+	Message string `json:"message"`
 }
 
 // GameSettings defines model for GameSettings.
@@ -979,8 +977,6 @@ type UpdateGameSettingsRequest struct {
 
 // User defines model for User.
 type User struct {
-	Name string `json:"name"`
-
 	// UserID traP ID。
 	UserID UserID `json:"userId"`
 }
