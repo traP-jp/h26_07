@@ -55,7 +55,7 @@ const stats = computed(() => [
   background: transparent;
   padding: 0;
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0;
   color: #1d5aa5;
