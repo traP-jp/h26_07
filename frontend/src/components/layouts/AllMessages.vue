@@ -68,7 +68,6 @@ watch(
     }
   },
 )
-defineExpose({ addSpecialMessage })
 </script>
 
 <template>
