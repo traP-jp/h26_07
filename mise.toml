@@ -45,8 +45,8 @@ run = [
 ]
 
 [tasks."db:up"]
-description = "デバッグ用 MariaDB を起動"
-run = "docker compose up -d db"
+description = "デバッグ用 MariaDB と Adminer を起動"
+run = "docker compose up -d db adminer"
 
 [tasks."db:wait"]
 description = "デバッグ用 MariaDB の起動完了を待つ"
@@ -67,7 +67,7 @@ description = "デバッグ用 MariaDB に GORM AutoMigrate を適用"
 run = "mise --cd backend run db:migrate"
 
 [tasks."db:setup"]
-description = "デバッグ用 MariaDB を起動して schema を作成"
+description = "デバッグ用 MariaDB と Adminer を起動して schema を作成"
 run = [
   "mise run db:up",
   "mise run db:wait",
@@ -75,11 +75,11 @@ run = [
 ]
 
 [tasks."db:down"]
-description = "デバッグ用 MariaDB を停止"
+description = "デバッグ用 MariaDB と Adminer を停止"
 run = "docker compose down"
 
 [tasks."db:reset"]
-description = "デバッグ用 MariaDB の volume を削除して作り直す"
+description = "デバッグ用 MariaDB の volume を削除して Adminer と一緒に作り直す"
 run = [
   "docker compose down -v",
   "mise run db:setup",
