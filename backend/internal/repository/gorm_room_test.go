@@ -108,7 +108,7 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if loaded.Cards[0].OwnerUserID != "alice" {
 		t.Fatalf("unexpected loaded card owner: %+v", loaded.Cards[0])
 	}
-	if loaded.Cards[0].CardNumber != "000000000000000000000000000000000222" {
+	if loaded.Cards[0].CardNumber != model.CardNumber("000000000000000000000000000000000222") {
 		t.Fatalf("unexpected loaded card number: %+v", loaded.Cards[0])
 	}
 	if loaded.Cards[0].Cells[0].Number == nil || *loaded.Cards[0].Cells[0].Number != 1 {
