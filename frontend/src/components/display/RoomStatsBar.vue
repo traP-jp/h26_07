@@ -75,7 +75,7 @@ const stats = computed(() => [
 
 .room-stats-bar__label {
   color: #bd84ea;
-  font-size: 13px;
+  font-size: 0.75em;
   font-weight: 600;
 }
 
@@ -83,34 +83,12 @@ const stats = computed(() => [
   display: inline-flex;
   align-items: baseline;
   gap: 1px;
-  font-size: 29px;
+  font-size: 1.8125em;
   font-weight: 800;
   letter-spacing: 0;
 }
 
 .room-stats-bar__unit {
   font-size: 0.68em;
-}
-
-@media (max-width: 520px) {
-  .room-stats-bar {
-    max-width: 300px;
-    height: 58px;
-    gap: 18px;
-    padding: 6px 26px;
-  }
-
-  .room-stats-bar__item {
-    min-width: 54px;
-    gap: 2px;
-  }
-
-  .room-stats-bar__label {
-    font-size: 12px;
-  }
-
-  .room-stats-bar__value {
-    font-size: 25px;
-  }
 }
 </style>
