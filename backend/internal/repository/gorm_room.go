@@ -217,6 +217,7 @@ func (r *GormRoomRepository) replaceRoomCards(tx *gorm.DB, room *model.Room) err
 	cellRows := make([]dbmodel.RoomCardCell, 0, len(room.Cards)*25)
 	createdAt := aggregateTimestamp(room)
 	seenCardIDs := make(map[string]struct{}, len(room.Cards))
+	seenCardNumbers := make(map[model.CardNumber]struct{}, len(room.Cards))
 	for _, card := range room.Cards {
 		cardID := cardIDString(card.CardID)
 		if _, ok := seenCardIDs[cardID]; ok {
@@ -226,10 +227,18 @@ func (r *GormRoomRepository) replaceRoomCards(tx *gorm.DB, room *model.Room) err
 		if err := validateUserID(card.OwnerUserID); err != nil {
 			return err
 		}
+		if err := validateCardNumber(card.CardNumber); err != nil {
+			return err
+		}
+		if _, ok := seenCardNumbers[card.CardNumber]; ok {
+			return fmt.Errorf("%w: duplicate card number %s", ErrInvalidRoomAggregate, card.CardNumber)
+		}
+		seenCardNumbers[card.CardNumber] = struct{}{}
 
 		cardRows = append(cardRows, dbmodel.RoomCard{
 			CardID:      cardID,
 			RoomID:      roomID,
+			CardNumber:  string(card.CardNumber),
 			OwnerUserID: string(card.OwnerUserID),
 			CreatedAt:   createdAt,
 		})
@@ -340,17 +349,17 @@ func (r *GormRoomRepository) replaceMessages(tx *gorm.DB, room *model.Room) erro
 	if err := tx.Where("room_id = ?", roomID).Delete(&dbmodel.RoomMessage{}).Error; err != nil {
 		return err
 	}
-	if len(room.Massages) == 0 {
+	if len(room.Messages) == 0 {
 		return nil
 	}
 
-	rows := make([]dbmodel.RoomMessage, 0, len(room.Massages))
-	for _, message := range room.Massages {
+	rows := make([]dbmodel.RoomMessage, 0, len(room.Messages))
+	for _, message := range room.Messages {
 		if err := validateUserID(message.Author); err != nil {
 			return err
 		}
 		rows = append(rows, dbmodel.RoomMessage{
-			MessageID:    messageIDString(message.MassageID),
+			MessageID:    messageIDString(message.MessageID),
 			RoomID:       roomID,
 			AuthorUserID: string(message.Author),
 			Content:      message.Content,
@@ -434,6 +443,9 @@ func (r *GormRoomRepository) buildRoomSummaries(ctx context.Context, roomRows []
 	if err := loadRoomSummaryBingoSummaries(db, roomIDs, summaryByID); err != nil {
 		return nil, err
 	}
+	if err := loadRoomSummaryReachSummaries(db, roomIDs, summaryByID); err != nil {
+		return nil, err
+	}
 
 	return summaries, nil
 }
@@ -460,7 +472,7 @@ func roomFromRow(row dbmodel.Room) (*model.Room, error) {
 		PickedBalls:  []model.BallNumber{},
 		BingoRecords: []model.BingoRecord{},
 		ReachRecords: []model.ReachRecord{},
-		Massages:     []model.Massage{},
+		Messages:     []model.Message{},
 		CreatedAt:    row.CreatedAt,
 		UpdatedAt:    row.UpdatedAt,
 	}, nil
@@ -485,6 +497,7 @@ func roomSummaryFromRow(row dbmodel.Room) (model.RoomSummary, error) {
 		},
 		Participants:   []model.Participant{},
 		BingoSummaries: []model.BingoSummary{},
+		ReachSummaries: []model.ReachSummary{},
 		CreatedAt:      row.CreatedAt,
 		UpdatedAt:      row.UpdatedAt,
 	}, nil
@@ -594,6 +607,7 @@ func loadRoomCards(db *gorm.DB, roomIDs []string, roomByID map[string]*model.Roo
 			roomID: row.RoomID,
 			card: model.Card{
 				CardID:      cardID,
+				CardNumber:  model.CardNumber(row.CardNumber),
 				OwnerUserID: model.UserID(row.OwnerUserID),
 				Cells:       [25]model.CardCell{},
 			},
@@ -714,6 +728,43 @@ func loadRoomSummaryBingoSummaries(db *gorm.DB, roomIDs []string, summaryByID ma
 	return nil
 }
 
+func loadRoomSummaryReachSummaries(db *gorm.DB, roomIDs []string, summaryByID map[string]*model.RoomSummary) error {
+	var reachRows []dbmodel.RoomReachRecord
+	if err := db.Where("room_id IN ?", roomIDs).
+		Order("room_id ASC").
+		Order("created_at ASC").
+		Order("user_id ASC").
+		Find(&reachRows).
+		Error; err != nil {
+		return err
+	}
+
+	reachRecordsByRoomID := make(map[string][]model.ReachRecord, len(roomIDs))
+	for _, row := range reachRows {
+		reachRecordsByRoomID[row.RoomID] = append(reachRecordsByRoomID[row.RoomID], model.ReachRecord{
+			UserID:    model.UserID(row.UserID),
+			CreatedAt: row.CreatedAt,
+		})
+	}
+
+	bingoRecordsByRoomID := make(map[string][]model.BingoRecord, len(roomIDs))
+	for _, roomID := range roomIDs {
+		for _, bingoSummary := range summaryByID[roomID].BingoSummaries {
+			bingoRecordsByRoomID[roomID] = append(bingoRecordsByRoomID[roomID], model.BingoRecord{
+				UserID: bingoSummary.UserID,
+			})
+		}
+	}
+
+	for _, roomID := range roomIDs {
+		summaryByID[roomID].ReachSummaries = model.ReachSummariesFromRecords(
+			reachRecordsByRoomID[roomID],
+			bingoRecordsByRoomID[roomID],
+		)
+	}
+	return nil
+}
+
 func loadReachRecords(db *gorm.DB, roomIDs []string, roomByID map[string]*model.Room) error {
 	var rows []dbmodel.RoomReachRecord
 	if err := db.Where("room_id IN ?", roomIDs).
@@ -757,8 +808,8 @@ func loadMessages(db *gorm.DB, roomIDs []string, roomByID map[string]*model.Room
 		if err != nil {
 			return err
 		}
-		roomByID[row.RoomID].Massages = append(roomByID[row.RoomID].Massages, model.Massage{
-			MassageID: messageID,
+		roomByID[row.RoomID].Messages = append(roomByID[row.RoomID].Messages, model.Message{
+			MessageID: messageID,
 			Content:   row.Content,
 			Author:    model.UserID(row.AuthorUserID),
 			CreatedAt: row.CreatedAt,
@@ -807,7 +858,7 @@ func roomUserRows(room *model.Room) ([]dbmodel.RoomUser, error) {
 			return nil, err
 		}
 	}
-	for _, message := range room.Massages {
+	for _, message := range room.Messages {
 		if err := addUserID(message.Author); err != nil {
 			return nil, err
 		}
@@ -869,6 +920,13 @@ func validateUserID(userID model.UserID) error {
 	return nil
 }
 
+func validateCardNumber(cardNumber model.CardNumber) error {
+	if !cardNumber.Valid() {
+		return fmt.Errorf("%w: invalid card number %q", ErrInvalidRoomAggregate, cardNumber)
+	}
+	return nil
+}
+
 func aggregateTimestamp(room *model.Room) time.Time {
 	if !room.UpdatedAt.IsZero() {
 		return room.UpdatedAt
@@ -903,12 +961,12 @@ func parseRecordID(value string) (model.RecordID, error) {
 	return model.RecordID(id), nil
 }
 
-func parseMessageID(value string) (model.MassageID, error) {
+func parseMessageID(value string) (model.MessageID, error) {
 	id, err := uuid.Parse(value)
 	if err != nil {
-		return model.MassageID{}, fmt.Errorf("%w: invalid message id %q: %v", ErrInvalidRoomAggregate, value, err)
+		return model.MessageID{}, fmt.Errorf("%w: invalid message id %q: %v", ErrInvalidRoomAggregate, value, err)
 	}
-	return model.MassageID(id), nil
+	return model.MessageID(id), nil
 }
 
 func roomIDString(roomID model.RoomID) string {
@@ -923,7 +981,7 @@ func recordIDString(recordID model.RecordID) string {
 	return uuid.UUID(recordID).String()
 }
 
-func messageIDString(messageID model.MassageID) string {
+func messageIDString(messageID model.MessageID) string {
 	return uuid.UUID(messageID).String()
 }
 

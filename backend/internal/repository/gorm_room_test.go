@@ -45,14 +45,20 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 		Line:          1,
 		LastCellIndex: 4,
 		CreatedAt:     createdAt.Add(3 * time.Minute),
+	}, {
+		RecordID:      mustRecordID("77777777-7777-7777-7777-777777777777"),
+		UserID:        "bob",
+		Line:          2,
+		LastCellIndex: 9,
+		CreatedAt:     createdAt.Add(4 * time.Minute),
 	}}
-	room.Massages = []model.Massage{{
-		MassageID: mustMessageID("55555555-5555-5555-5555-555555555555"),
+	room.Messages = []model.Message{{
+		MessageID: mustMessageID("55555555-5555-5555-5555-555555555555"),
 		Content:   "hello",
 		Author:    "alice",
-		CreatedAt: createdAt.Add(4 * time.Minute),
+		CreatedAt: createdAt.Add(5 * time.Minute),
 	}}
-	room.UpdatedAt = createdAt.Add(5 * time.Minute)
+	room.UpdatedAt = createdAt.Add(6 * time.Minute)
 
 	if err := repo.Save(ctx, room); err != nil {
 		t.Fatalf("failed to save room: %v", err)
@@ -77,6 +83,10 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 		summaries[0].BingoSummaries[0].BingoOrders[0] != 1 {
 		t.Fatalf("unexpected room summary bingos: %+v", summaries[0].BingoSummaries)
 	}
+	if len(summaries[0].ReachSummaries) != 1 ||
+		summaries[0].ReachSummaries[0].UserID != "bob" {
+		t.Fatalf("unexpected room summary reaches: %+v", summaries[0].ReachSummaries)
+	}
 
 	loaded, err := repo.FindByID(ctx, roomID)
 	if err != nil {
@@ -98,6 +108,9 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if loaded.Cards[0].OwnerUserID != "alice" {
 		t.Fatalf("unexpected loaded card owner: %+v", loaded.Cards[0])
 	}
+	if loaded.Cards[0].CardNumber != model.CardNumber("000000000000000000000000000000000222") {
+		t.Fatalf("unexpected loaded card number: %+v", loaded.Cards[0])
+	}
 	if loaded.Cards[0].Cells[0].Number == nil || *loaded.Cards[0].Cells[0].Number != 1 {
 		t.Fatalf("unexpected loaded first card cell: %+v", loaded.Cards[0].Cells[0])
 	}
@@ -110,11 +123,15 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if len(loaded.BingoRecords) != 1 || loaded.BingoRecords[0].Order != 1 {
 		t.Fatalf("unexpected loaded bingo records: %+v", loaded.BingoRecords)
 	}
-	if len(loaded.ReachRecords) != 1 || loaded.ReachRecords[0].LastCellIndex != 4 {
+	if len(loaded.ReachRecords) != 2 ||
+		loaded.ReachRecords[0].UserID != "alice" ||
+		loaded.ReachRecords[0].LastCellIndex != 4 ||
+		loaded.ReachRecords[1].UserID != "bob" ||
+		loaded.ReachRecords[1].LastCellIndex != 9 {
 		t.Fatalf("unexpected loaded reach records: %+v", loaded.ReachRecords)
 	}
-	if len(loaded.Massages) != 1 || loaded.Massages[0].Content != "hello" || loaded.Massages[0].Author != "alice" {
-		t.Fatalf("unexpected loaded messages: %+v", loaded.Massages)
+	if len(loaded.Messages) != 1 || loaded.Messages[0].Content != "hello" || loaded.Messages[0].Author != "alice" {
+		t.Fatalf("unexpected loaded messages: %+v", loaded.Messages)
 	}
 
 	room.Settings.Name = "updated game"
@@ -123,7 +140,7 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	room.PickedBalls = []model.BallNumber{1}
 	room.BingoRecords = nil
 	room.ReachRecords = nil
-	room.Massages = nil
+	room.Messages = nil
 	room.UpdatedAt = createdAt.Add(10 * time.Minute)
 	if err := repo.Save(ctx, room); err != nil {
 		t.Fatalf("failed to update room: %v", err)
@@ -136,7 +153,7 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if updated.Settings.Name != "updated game" {
 		t.Fatalf("unexpected updated settings: %+v", updated.Settings)
 	}
-	if len(updated.Participants) != 0 || len(updated.Cards) != 0 || len(updated.BingoRecords) != 0 || len(updated.ReachRecords) != 0 || len(updated.Massages) != 0 {
+	if len(updated.Participants) != 0 || len(updated.Cards) != 0 || len(updated.BingoRecords) != 0 || len(updated.ReachRecords) != 0 || len(updated.Messages) != 0 {
 		t.Fatalf("expected replaced child rows to be empty: %+v", updated)
 	}
 	if len(updated.PickedBalls) != 1 || updated.PickedBalls[0] != 1 {
@@ -175,6 +192,33 @@ func TestGormRoomRepositoryFindByIDNotFound(t *testing.T) {
 	_, err := repo.FindByID(context.Background(), mustRoomID("77777777-7777-7777-7777-777777777777"))
 	if !errors.Is(err, ErrRoomNotFound) {
 		t.Fatalf("expected ErrRoomNotFound, got %v", err)
+	}
+}
+
+func TestGormRoomRepositorySaveRejectsDuplicateCardNumbers(t *testing.T) {
+	ctx := context.Background()
+	repo := NewGormRoomRepository(newRoomRepositoryTestDB(t))
+	now := time.Date(2026, 6, 27, 12, 0, 0, 0, time.UTC)
+	room := model.NewRoom(mustRoomID("99999999-9999-9999-9999-999999999999"), "999999", model.RoomSettings{
+		Name:        "duplicate card number game",
+		Description: "",
+		Admins:      []model.UserID{"owner"},
+	}, now)
+
+	if err := room.Join("alice", now); err != nil {
+		t.Fatalf("failed to join alice: %v", err)
+	}
+	if err := room.Join("bob", now); err != nil {
+		t.Fatalf("failed to join bob: %v", err)
+	}
+	room.Cards = []model.Card{
+		testCard("22222222-2222-2222-2222-222222222222", "alice"),
+		testCard("33333333-3333-3333-3333-333333333333", "bob"),
+	}
+
+	err := repo.Save(ctx, room)
+	if !errors.Is(err, ErrInvalidRoomAggregate) {
+		t.Fatalf("expected ErrInvalidRoomAggregate, got %v", err)
 	}
 }
 
@@ -258,9 +302,11 @@ func newRoomRepositoryTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE room_cards (
 			card_id TEXT PRIMARY KEY,
 			room_id TEXT NOT NULL,
+			card_number TEXT NOT NULL,
 			owner_user_id TEXT NOT NULL,
 			created_at DATETIME NOT NULL,
-			UNIQUE (room_id, owner_user_id)
+			UNIQUE (room_id, owner_user_id),
+			UNIQUE (room_id, card_number)
 		)`,
 		`CREATE TABLE room_card_cells (
 			card_id TEXT NOT NULL,
@@ -334,6 +380,7 @@ func testCard(cardID string, ownerUserID model.UserID) model.Card {
 
 	return model.Card{
 		CardID:      model.CardID(uuid.MustParse(cardID)),
+		CardNumber:  "000000000000000000000000000000000222",
 		OwnerUserID: ownerUserID,
 		Cells:       cells,
 	}
@@ -347,6 +394,6 @@ func mustRecordID(value string) model.RecordID {
 	return model.RecordID(uuid.MustParse(value))
 }
 
-func mustMessageID(value string) model.MassageID {
-	return model.MassageID(uuid.MustParse(value))
+func mustMessageID(value string) model.MessageID {
+	return model.MessageID(uuid.MustParse(value))
 }
