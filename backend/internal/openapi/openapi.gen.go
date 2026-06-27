@@ -682,8 +682,10 @@ type DisplayPickFinishedBody struct {
 	NewReaches       []ReachUpdate  `json:"newReaches"`
 	ParticipantCount int            `json:"participantCount"`
 	PickState        PickState      `json:"pickState"`
-	PickedBall       PickedBall     `json:"pickedBall"`
-	PickedBalls      []PickedBall   `json:"pickedBalls"`
+
+	// PickedBall 確定済みの通常数字球。1..75。
+	PickedBall  PickedBall   `json:"pickedBall"`
+	PickedBalls []PickedBall `json:"pickedBalls"`
 }
 
 // DisplayPickFinishedEvent defines model for DisplayPickFinishedEvent.
@@ -879,8 +881,10 @@ type ParticipantPickFinishedBody struct {
 	NewBingos   []BingoUpdate `json:"newBingos"`
 	NewReaches  []ReachUpdate `json:"newReaches"`
 	PickState   PickState     `json:"pickState"`
-	PickedBall  PickedBall    `json:"pickedBall"`
-	PickedBalls []PickedBall  `json:"pickedBalls"`
+
+	// PickedBall 確定済みの通常数字球。1..75。
+	PickedBall  PickedBall   `json:"pickedBall"`
+	PickedBalls []PickedBall `json:"pickedBalls"`
 }
 
 // ParticipantPickFinishedEvent defines model for ParticipantPickFinishedEvent.
@@ -922,16 +926,8 @@ type PickStartedBody = EmptyObject
 // PickState defines model for PickState.
 type PickState string
 
-// PickedBall defines model for PickedBall.
-type PickedBall struct {
-	Number int `json:"number"`
-
-	// PickedAt ISO 8601 datetime string。
-	PickedAt DateTime `json:"pickedAt"`
-
-	// PickedBallID UUID string。
-	PickedBallID UUID `json:"pickedBallId"`
-}
+// PickedBall 確定済みの通常数字球。1..75。
+type PickedBall = int
 
 // ReachUpdate PickFinished の body で使う初リーチ情報。カード詳細、リーチライン index、cell index は含めない。
 type ReachUpdate struct {
