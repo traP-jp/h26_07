@@ -19,6 +19,15 @@ const router = createRouter({
           name: 'rurun',
           component: () => import('@/views/Rurun.vue'),
         },
+        {
+          path: '/:roomCode',
+          redirect: (to) => `/${String(to.params.roomCode)}/participants`,
+        },
+        {
+          path: '/:roomCode/display',
+          name: 'display',
+          component: () => import('@/views/Display.vue'),
+        },
       ],
     },
   ],
