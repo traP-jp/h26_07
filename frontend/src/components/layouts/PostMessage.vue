@@ -10,6 +10,12 @@ const post = async () => {
   const data: RequestBody = {
     content: newMessage.value,
   }
+  if (newMessage.value.length == 0) {
+    throw new Error('Error 400 : Message Invalid')
+  }
+  if (newMessage.value.length > 500) {
+    throw new Error('Error 400 : Message Invalid')
+  }
   try {
     const response = await apiClient.POST('/api/rooms/{roomId}/chats', {
       params: { path: { roomId: room.roomId } },
