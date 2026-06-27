@@ -2,6 +2,7 @@ package handler
 
 import (
 	"cmp"
+	"errors"
 	"net/http"
 	"slices"
 
@@ -235,4 +236,73 @@ func (h *RoomHandler) PostParticipant(c *echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+func convertMessageToOpenAPI(message model.Massage) openapi.Message {
+	return openapi.Message{
+		MessageID: uuid.UUID(message.MassageID).String(),
+		Content:   message.Content,
+		Author: openapi.User{
+			UserID: openapi.UserID(message.Author),
+		},
+		CreatedAt: message.CreatedAt,
+	}
+}
+
+func (h *RoomHandler) PostMessage(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	var createMessageRequest openapi.CreateMessageRequest
+	if err := c.Bind(&createMessageRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "message invalid"})
+	}
+	content := createMessageRequest.Content
+	message, err := h.roomService.PostMessage(c.Request().Context(), model.RoomID(roomID), user, content)
+	if err != nil {
+		if errors.Is(err, model.ErrMassageInvalid) {
+			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "message invalid"})
+		} else if errors.Is(err, model.ErrRoomNotFound) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomMassageNotAllowed) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "message not allowed"})
+		} else {
+			return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+		}
+	}
+	return c.JSON(http.StatusAccepted, convertMessageToOpenAPI(*message))
+}
+
+func (h *RoomHandler) GetMessages(c *echo.Context) error {
+	_, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	messages, err := h.roomService.GetMessage(c.Request().Context(), model.RoomID(roomID))
+	if err != nil {
+		if errors.Is(err, model.ErrRoomNotFound) {
+			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomMassageNotAllowed) {
+			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "room message not allowed"})
+		} else {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+	}
+	result := make([]openapi.Message, 0, len(*messages))
+	for _, message := range *messages {
+		result = append(result, convertMessageToOpenAPI(message))
+	}
+	return c.JSON(http.StatusOK, result)
 }
