@@ -36,14 +36,14 @@ const demoPickSteps = [
   {
     delayMs: 1800,
     pickedBall: 7,
-    newReachUserIds: ['saba', 'rurun'],
+    newReachUserIds: ['kurosaki', 'rurun'],
     newBingoUserIds: [],
   },
   {
     delayMs: 4200,
     pickedBall: 22,
     newReachUserIds: ['howard127', 'kurao'],
-    newBingoUserIds: ['saba'],
+    newBingoUserIds: ['kurosaki'],
   },
   {
     delayMs: 6600,

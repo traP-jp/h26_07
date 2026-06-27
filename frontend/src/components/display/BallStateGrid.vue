@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import type { CardCellState, PickedBall } from '@/api/schema'
 import NumberBall from '@/components/layouts/NumberBall.vue'
-import { getBallPalette } from '@/components/rooms/ballPalette'
+import { getBallPalette } from '@/components/display/ballPalette'
 
 const props = defineProps<{
   pickedBalls: PickedBall[]
@@ -64,13 +64,15 @@ const balls = computed<BallCell[]>(() =>
         v-for="ball in balls"
         :key="ball.number"
         class="ball-state-grid__cell relative grid place-items-center"
-        :class="{ 'opacity-70': ball.state === 'closed' }"
+        :class="{
+          'opacity-70': ball.state === 'closed',
+          'opacity-85': ball.state === 'open',
+        }"
       >
         <span
           v-if="ball.isLatest"
           class="pointer-events-none absolute -inset-1 rounded-full border-3"
           :style="{ borderColor: ball.ringColor }"
-          aria-hidden="true"
         />
         <NumberBall
           class="ball-state-grid__number"
