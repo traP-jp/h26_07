@@ -167,9 +167,9 @@ func (h *RoomHandler) GetRoom(c *echo.Context) error {
 }
 
 func convertBingoSummariesFromModelBingoSummary(bingosummaryies []model.BingoSummary) []openapi.BingoSummary {
-	result := make([]openapi.BingoSummary, len(bingosummaryies))
+	result := make([]openapi.BingoSummary, 0, len(bingosummaryies))
 	for _, bingosummary := range bingosummaryies {
-		bingoOrders := make([]int, len(bingosummary.BingoOrders))
+		bingoOrders := make([]int, 0, len(bingosummary.BingoOrders))
 		for _, bingoOrder := range bingosummary.BingoOrders {
 			bingoOrders = append(bingoOrders, int(bingoOrder))
 		}
@@ -185,7 +185,7 @@ func convertBingoSummariesFromModelBingoSummary(bingosummaryies []model.BingoSum
 }
 
 func convertRoomSummary(rooms []model.RoomSummary) []openapi.Room {
-	result := make([]openapi.Room, len(rooms))
+	result := make([]openapi.Room, 0, len(rooms))
 	for _, room := range rooms {
 		result = append(result,
 			openapi.Room{
