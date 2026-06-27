@@ -1,15 +1,61 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-interface Message {
-    messageId: string
-    userId: string
-    content: string
+//import { Message } from '@/api/schema'
+const messages = ref<Message[]>([])
+
+const ws = new WebSocket('ws://localhost:8080/ws')
+
+type UUID = string
+type DateTime = string
+type UserId = string
+type User = {
+    userId: UserId
+    name: string
 }
-const messages = ref<Message[]>([
-    { messageId: '0', userId: '', content: '球がなくなりました！' },
-    { messageId: '1', userId: 'HokubuRailway', content: 'おい' },
-    { messageId: '5', userId: 'BOT_kinano', content: 'おい！' },
-])
+type Message = {
+    messageId: UUID
+    content: string
+    author: User | null
+    createdAt: DateTime
+}
+type MessageCreatedBody = {
+    message: Message
+}
+type BingoUpdate = {
+    messageId: UUID
+    user: User
+    newBingoOrders: number[]
+    bingoOrders: number[]
+}
+type ReachUpdate = {
+    messageId: UUID
+    user: User
+}
+type AllPickedBody = {
+    messageId: UUID
+    pickedBalls: PickedBall[]
+}
+type PickedBall = {
+    pickedAt: DateTime
+}
+const addUserMessage = (message: Message) => {
+    messages.value.push(message)
+}
+const addSpecialMessage = (messageId: UUID, content: string) => {
+    messages.value.push({ messageId: messageId, content: content, author: null,  })
+}
+
+ws.addEventListener('message', (event: MessageEvent) => {
+    const data = JSON.parse(event.data)
+    if (data.type == 'MessageCreated') {
+        const message = data as MessageCreatedEvent
+        addUserMessage(message.messageId, message.userId, message.content)
+    }
+})
+
+const addSpecialMessage = (messageId: string, content: string) => {
+    messages.value.push({ messageId: messageId, userId: '', content: content })
+}
 </script>
 
 <template>
