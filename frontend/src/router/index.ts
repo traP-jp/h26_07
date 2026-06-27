@@ -47,6 +47,12 @@ const router = createRouter({
           component: () => import('@/views/New.vue'),
         },
         {
+          path: '/:roomCode/settings',
+          name: 'Settings',
+          component: () => import('@/views/Settings.vue'),
+          props: true,
+        },
+        {
           path: '/rurun',
           name: 'rurun',
           component: () => import('@/views/Rurun.vue'),
