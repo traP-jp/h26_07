@@ -1,16 +1,25 @@
 <template>
   <div class="display-page">
-    <div class="display-page__latest-ball" aria-label="直近の抽選番号">
-      <NumberBall
-        class="display-page__latest-number"
-        :ball-color="displayBallColor"
-        :text-color="displayBallTextColor"
-        :text="displayBallText"
-        :size="260"
-      />
+    <Iridescence
+      class="display-page__background"
+      :color="[1, 1, 1]"
+      :mouse-react="false"
+      :amplitude="0.1"
+      :speed="0.1"
+    />
+    <div class="display-page__content">
+      <div class="display-page__latest-ball" aria-label="直近の抽選番号">
+        <NumberBall
+          class="display-page__latest-number"
+          :ball-color="displayBallColor"
+          :text-color="displayBallTextColor"
+          :text="displayBallText"
+          :size="260"
+        />
+      </div>
+      <BallStateGrid :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
+      <RoomStatsBar />
     </div>
-    <BallStateGrid :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
-    <RoomStatsBar />
   </div>
 </template>
 
@@ -21,10 +30,12 @@ import { useRoute } from 'vue-router'
 
 import type { RoomCode, RoomId } from '@/api/schema'
 import type { PickedBall } from '@/api/schema'
+import Iridescence from '@/components/backgrounds/Iridescence.vue'
 import NumberBall from '@/components/layouts/NumberBall.vue'
 import BallStateGrid from '@/components/rooms/BallStateGrid.vue'
 import { getBallPalette } from '@/components/rooms/ballPalette'
 import RoomStatsBar from '@/components/rooms/RoomStatsBar.vue'
+import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 
@@ -32,6 +43,7 @@ const route = useRoute()
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
 const {
+  latestEvent,
   latestPickedBall,
   mode,
   pickState,
@@ -42,6 +54,8 @@ const {
 const roomCode = route.params.roomCode as RoomCode | undefined
 const roomId = ref<RoomId | null>(null)
 const rollingPickedBall = ref<PickedBall | null>(null)
+const drumroll = useSoundEffect('drumroll', { loop: true })
+const cymbal = useSoundEffect('cymbal')
 let rollingTimerId: number | null = null
 
 const displayPickedBall = computed(() => {
@@ -90,9 +104,11 @@ watch(
 
     if (nextPickState !== 'picking') {
       rollingPickedBall.value = null
+      drumroll.stop()
       return
     }
 
+    drumroll.play()
     rollingPickedBall.value = Math.floor(Math.random() * 75 + 1) as PickedBall
     rollingTimerId = window.setInterval(() => {
       rollingPickedBall.value = Math.floor(Math.random() * 75 + 1) as PickedBall
@@ -100,6 +116,13 @@ watch(
   },
   { immediate: true },
 )
+
+watch(latestEvent, (event) => {
+  if (!event) return
+  if (event.type !== 'PickFinished') return
+
+  cymbal.play()
+})
 
 onMounted(async () => {
   if (!roomCode) return
@@ -127,6 +150,23 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .display-page {
+  position: relative;
+  isolation: isolate;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.display-page__background {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.display-page__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   height: 100vh;
   flex-direction: column;
@@ -135,6 +175,14 @@ onBeforeUnmount(() => {
   overflow: hidden;
   padding: 3% 3% 2%;
   gap: 6%;
+}
+
+.display-page__content::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgb(255 255 255 / 0.2);
+  content: '';
 }
 
 .display-page__latest-ball {
@@ -152,5 +200,14 @@ onBeforeUnmount(() => {
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.display-page__content::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgb(255 255 255 / 0.26);
+  backdrop-filter: blur(1px) saturate(1.15);
+  content: '';
 }
 </style>
