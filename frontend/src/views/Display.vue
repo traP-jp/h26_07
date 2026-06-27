@@ -17,7 +17,11 @@
           :size="260"
         />
       </div>
-      <BallStateGrid :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
+      <div v-if="isGameWaiting" class="display-page__waiting-panel" role="status">
+        <p class="display-page__waiting-title">ゲームはまだ始まっていません</p>
+        <p class="display-page__waiting-text">参加者の準備ができるまでお待ちください</p>
+      </div>
+      <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
       <RoomStatsBar />
     </div>
   </div>
@@ -57,6 +61,8 @@ const rollingPickedBall = ref<PickedBall | null>(null)
 const drumroll = useSoundEffect('drumroll', { loop: true })
 const cymbal = useSoundEffect('cymbal')
 let rollingTimerId: number | null = null
+
+const isGameWaiting = computed(() => roomState.value === 'waiting')
 
 const displayPickedBall = computed(() => {
   if (pickState.value === 'picking') {
@@ -181,7 +187,8 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.26);
+  backdrop-filter: blur(1px) saturate(1.15);
   content: '';
 }
 
@@ -202,12 +209,53 @@ onBeforeUnmount(() => {
     0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-.display-page__content::before {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: rgb(255 255 255 / 0.26);
-  backdrop-filter: blur(1px) saturate(1.15);
-  content: '';
+.display-page__waiting-panel {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 774px;
+  min-height: 186px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid rgb(255 255 255 / 0.48);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.42);
+  box-shadow: 0 18px 45px rgb(20 55 110 / 0.16);
+  backdrop-filter: blur(14px) saturate(1.25);
+  text-align: center;
+}
+
+.display-page__waiting-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #1f4f8f;
+}
+
+.display-page__waiting-text {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #43678f;
+}
+
+@media (max-width: 520px) {
+  .display-page__waiting-panel {
+    min-height: 132px;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .display-page__waiting-title {
+    font-size: 22px;
+  }
+
+  .display-page__waiting-text {
+    font-size: 14px;
+  }
 }
 </style>
