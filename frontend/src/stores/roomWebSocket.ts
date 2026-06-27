@@ -42,12 +42,7 @@ type ConnectOptions = {
 }
 
 function createRoomWebSocketUrl(roomId: RoomId, mode: WebSocketMode) {
-  const baseUrl = import.meta.env.VITE_WS_BASE_URL
-  if (!baseUrl) {
-    throw new Error('VITE_WS_BASE_URL is not set')
-  }
-
-  const url = new URL(`/api/rooms/${roomId}/ws`, baseUrl)
+  const url = new URL(`/api/rooms/${roomId}/ws`, window.location.origin)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   url.searchParams.set('mode', mode)
   return url.toString()
