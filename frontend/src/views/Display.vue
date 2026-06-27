@@ -25,6 +25,7 @@ import NumberBall from '@/components/layouts/NumberBall.vue'
 import BallStateGrid from '@/components/rooms/BallStateGrid.vue'
 import { getBallPalette } from '@/components/rooms/ballPalette'
 import RoomStatsBar from '@/components/rooms/RoomStatsBar.vue'
+import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 
@@ -32,6 +33,7 @@ const route = useRoute()
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
 const {
+  latestEvent,
   latestPickedBall,
   mode,
   pickState,
@@ -42,6 +44,8 @@ const {
 const roomCode = route.params.roomCode as RoomCode | undefined
 const roomId = ref<RoomId | null>(null)
 const rollingPickedBall = ref<PickedBall | null>(null)
+const drumroll = useSoundEffect('drumroll', { loop: true })
+const cymbal = useSoundEffect('cymbal')
 let rollingTimerId: number | null = null
 
 const displayPickedBall = computed(() => {
@@ -90,9 +94,11 @@ watch(
 
     if (nextPickState !== 'picking') {
       rollingPickedBall.value = null
+      drumroll.stop()
       return
     }
 
+    drumroll.play()
     rollingPickedBall.value = Math.floor(Math.random() * 75 + 1) as PickedBall
     rollingTimerId = window.setInterval(() => {
       rollingPickedBall.value = Math.floor(Math.random() * 75 + 1) as PickedBall
@@ -100,6 +106,13 @@ watch(
   },
   { immediate: true },
 )
+
+watch(latestEvent, (event) => {
+  if (!event) return
+  if (event.type !== 'PickFinished') return
+
+  cymbal.play()
+})
 
 onMounted(async () => {
   if (!roomCode) return
