@@ -108,6 +108,9 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if loaded.Cards[0].OwnerUserID != "alice" {
 		t.Fatalf("unexpected loaded card owner: %+v", loaded.Cards[0])
 	}
+	if loaded.Cards[0].CardNumber != model.CardNumber("000000000000000000000000000000000222") {
+		t.Fatalf("unexpected loaded card number: %+v", loaded.Cards[0])
+	}
 	if loaded.Cards[0].Cells[0].Number == nil || *loaded.Cards[0].Cells[0].Number != 1 {
 		t.Fatalf("unexpected loaded first card cell: %+v", loaded.Cards[0].Cells[0])
 	}
@@ -192,6 +195,33 @@ func TestGormRoomRepositoryFindByIDNotFound(t *testing.T) {
 	}
 }
 
+func TestGormRoomRepositorySaveRejectsDuplicateCardNumbers(t *testing.T) {
+	ctx := context.Background()
+	repo := NewGormRoomRepository(newRoomRepositoryTestDB(t))
+	now := time.Date(2026, 6, 27, 12, 0, 0, 0, time.UTC)
+	room := model.NewRoom(mustRoomID("99999999-9999-9999-9999-999999999999"), "999999", model.RoomSettings{
+		Name:        "duplicate card number game",
+		Description: "",
+		Admins:      []model.UserID{"owner"},
+	}, now)
+
+	if err := room.Join("alice", now); err != nil {
+		t.Fatalf("failed to join alice: %v", err)
+	}
+	if err := room.Join("bob", now); err != nil {
+		t.Fatalf("failed to join bob: %v", err)
+	}
+	room.Cards = []model.Card{
+		testCard("22222222-2222-2222-2222-222222222222", "alice"),
+		testCard("33333333-3333-3333-3333-333333333333", "bob"),
+	}
+
+	err := repo.Save(ctx, room)
+	if !errors.Is(err, ErrInvalidRoomAggregate) {
+		t.Fatalf("expected ErrInvalidRoomAggregate, got %v", err)
+	}
+}
+
 func TestGormTransactionRunnerRollsBackRoomRepositoryChanges(t *testing.T) {
 	ctx := context.Background()
 	db := newRoomRepositoryTestDB(t)
@@ -272,9 +302,11 @@ func newRoomRepositoryTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE room_cards (
 			card_id TEXT PRIMARY KEY,
 			room_id TEXT NOT NULL,
+			card_number TEXT NOT NULL,
 			owner_user_id TEXT NOT NULL,
 			created_at DATETIME NOT NULL,
-			UNIQUE (room_id, owner_user_id)
+			UNIQUE (room_id, owner_user_id),
+			UNIQUE (room_id, card_number)
 		)`,
 		`CREATE TABLE room_card_cells (
 			card_id TEXT NOT NULL,
@@ -348,6 +380,7 @@ func testCard(cardID string, ownerUserID model.UserID) model.Card {
 
 	return model.Card{
 		CardID:      model.CardID(uuid.MustParse(cardID)),
+		CardNumber:  "000000000000000000000000000000000222",
 		OwnerUserID: ownerUserID,
 		Cells:       cells,
 	}

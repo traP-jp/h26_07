@@ -217,6 +217,7 @@ func (r *GormRoomRepository) replaceRoomCards(tx *gorm.DB, room *model.Room) err
 	cellRows := make([]dbmodel.RoomCardCell, 0, len(room.Cards)*25)
 	createdAt := aggregateTimestamp(room)
 	seenCardIDs := make(map[string]struct{}, len(room.Cards))
+	seenCardNumbers := make(map[model.CardNumber]struct{}, len(room.Cards))
 	for _, card := range room.Cards {
 		cardID := cardIDString(card.CardID)
 		if _, ok := seenCardIDs[cardID]; ok {
@@ -226,10 +227,18 @@ func (r *GormRoomRepository) replaceRoomCards(tx *gorm.DB, room *model.Room) err
 		if err := validateUserID(card.OwnerUserID); err != nil {
 			return err
 		}
+		if err := validateCardNumber(card.CardNumber); err != nil {
+			return err
+		}
+		if _, ok := seenCardNumbers[card.CardNumber]; ok {
+			return fmt.Errorf("%w: duplicate card number %s", ErrInvalidRoomAggregate, card.CardNumber)
+		}
+		seenCardNumbers[card.CardNumber] = struct{}{}
 
 		cardRows = append(cardRows, dbmodel.RoomCard{
 			CardID:      cardID,
 			RoomID:      roomID,
+			CardNumber:  string(card.CardNumber),
 			OwnerUserID: string(card.OwnerUserID),
 			CreatedAt:   createdAt,
 		})
@@ -598,6 +607,7 @@ func loadRoomCards(db *gorm.DB, roomIDs []string, roomByID map[string]*model.Roo
 			roomID: row.RoomID,
 			card: model.Card{
 				CardID:      cardID,
+				CardNumber:  model.CardNumber(row.CardNumber),
 				OwnerUserID: model.UserID(row.OwnerUserID),
 				Cells:       [25]model.CardCell{},
 			},
@@ -906,6 +916,13 @@ func uniqueUserIDs(userIDs []model.UserID) []model.UserID {
 func validateUserID(userID model.UserID) error {
 	if userID == "" {
 		return fmt.Errorf("%w: empty user id", ErrInvalidRoomAggregate)
+	}
+	return nil
+}
+
+func validateCardNumber(cardNumber model.CardNumber) error {
+	if !cardNumber.Valid() {
+		return fmt.Errorf("%w: invalid card number %q", ErrInvalidRoomAggregate, cardNumber)
 	}
 	return nil
 }
