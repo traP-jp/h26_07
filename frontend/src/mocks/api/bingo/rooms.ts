@@ -19,6 +19,26 @@ export const mockRooms: Room[] = [
         user: { userId: 'saba' },
         joinedAt: '2026-06-27T10:01:00.000Z',
       },
+      {
+        user: { userId: 'rurun' },
+        joinedAt: '2026-06-27T10:02:00.000Z',
+      },
+      {
+        user: { userId: 'howard127' },
+        joinedAt: '2026-06-27T10:03:00.000Z',
+      },
+      {
+        user: { userId: 'kurao' },
+        joinedAt: '2026-06-27T10:04:00.000Z',
+      },
+      {
+        user: { userId: 'minami' },
+        joinedAt: '2026-06-27T10:05:00.000Z',
+      },
+      {
+        user: { userId: 'yamada' },
+        joinedAt: '2026-06-27T10:06:00.000Z',
+      },
     ],
     bingoSummaries: [],
     reachSummaries: [],

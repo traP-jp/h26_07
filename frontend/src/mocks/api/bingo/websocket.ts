@@ -15,6 +15,7 @@ import type {
   PickCanceledBody,
   PickStartedBody,
   Room,
+  User,
   WebSocketEventType,
 } from '@/api/schema'
 import { ws } from 'msw'
@@ -28,7 +29,36 @@ type MockWebSocketEvent<TBody> = {
 }
 
 const roomSocket = ws.link('*/api/rooms/:roomId/ws')
-const mockPickedBalls: PickedBall[] = [7, 22, 45]
+const initialPickedBalls: PickedBall[] = [4, 18, 33]
+const scheduledDemoPickRoomIds = new Set<string>()
+
+const demoPickSteps = [
+  {
+    delayMs: 1800,
+    pickedBall: 7,
+    newReachUserIds: ['saba', 'rurun'],
+    newBingoUserIds: [],
+  },
+  {
+    delayMs: 4200,
+    pickedBall: 22,
+    newReachUserIds: ['howard127', 'kurao'],
+    newBingoUserIds: ['saba'],
+  },
+  {
+    delayMs: 6600,
+    pickedBall: 45,
+    newReachUserIds: ['minami'],
+    newBingoUserIds: ['rurun'],
+  },
+  {
+    delayMs: 9000,
+    pickedBall: 61,
+    newReachUserIds: ['yamada'],
+    newBingoUserIds: ['howard127', 'kurao'],
+  },
+] as const
+
 const mockCard: Card = {
   cardId: '00000000-0000-4000-8000-000000000201',
   ownerUserId: 'mumumu',
@@ -48,7 +78,7 @@ const mockCard: Card = {
       index,
       number,
       displayText: String(number),
-      cellState: mockPickedBalls.includes(number) ? 'open' : 'closed',
+      cellState: initialPickedBalls.includes(number) ? 'open' : 'closed',
     }
   }),
   bingoLines: [],
@@ -99,6 +129,73 @@ function roomByPathParam(roomParam: string): Room {
   )
 }
 
+function roomUser(room: Room, userId: string): User {
+  return (
+    room.participants.find((participant) => participant.user.userId === userId)?.user ?? {
+      userId,
+    }
+  )
+}
+
+function addReachSummary(room: Room, user: User): void {
+  const alreadyReached = room.reachSummaries.some((summary) => summary.user.userId === user.userId)
+  const alreadyBingo = room.bingoSummaries.some((summary) => summary.user.userId === user.userId)
+
+  if (!alreadyReached && !alreadyBingo) {
+    room.reachSummaries.push({ user })
+  }
+}
+
+function addBingoSummary(room: Room, user: User): number[] {
+  room.reachSummaries = room.reachSummaries.filter((summary) => summary.user.userId !== user.userId)
+
+  const summary = room.bingoSummaries.find((candidate) => candidate.user.userId === user.userId)
+  const nextOrder =
+    Math.max(0, ...room.bingoSummaries.flatMap((candidate) => candidate.bingoOrders)) + 1
+
+  if (summary) {
+    summary.bingoOrders.push(nextOrder)
+    return summary.bingoOrders
+  }
+
+  const bingoOrders = [nextOrder]
+  room.bingoSummaries.push({ user, bingoOrders })
+  return bingoOrders
+}
+
+function applyDemoPickStep(room: Room, step: (typeof demoPickSteps)[number]) {
+  const newReaches = step.newReachUserIds.map((userId) => {
+    const user = roomUser(room, userId)
+    addReachSummary(room, user)
+    return { user }
+  })
+
+  const newBingos = step.newBingoUserIds.map((userId) => {
+    const user = roomUser(room, userId)
+    const previousOrders =
+      room.bingoSummaries.find((summary) => summary.user.userId === userId)?.bingoOrders ?? []
+    const bingoOrders = addBingoSummary(room, user)
+    const newBingoOrders = bingoOrders.filter((order) => !previousOrders.includes(order))
+
+    return {
+      user,
+      newBingoOrders,
+      bingoOrders,
+    }
+  })
+
+  room.state = 'playing'
+  room.pickState = 'idle'
+  room.updatedAt = new Date().toISOString()
+
+  return {
+    pickedBall: step.pickedBall,
+    pickedBalls: [...new Set([...initialPickedBalls, step.pickedBall])],
+    newReaches,
+    newBingos,
+  }
+}
+
 function initializedBody(
   connection: MockSocketConnection,
 ): ParticipantInitializedBody | DisplayInitializedBody {
@@ -109,7 +206,7 @@ function initializedBody(
       state: room.state,
       settings: room.settings,
       pickState: room.pickState,
-      pickedBalls: mockPickedBalls,
+      pickedBalls: initialPickedBalls,
       bingoSummaries: room.bingoSummaries,
       reachSummaries: room.reachSummaries,
       card: mockCard,
@@ -121,7 +218,7 @@ function initializedBody(
     settings: room.settings,
     pickState: room.pickState,
     participantCount: room.participants.length,
-    pickedBalls: mockPickedBalls,
+    pickedBalls: initialPickedBalls,
     qrCodeVisible: room.qrCodeVisible,
     bingoSummaries: room.bingoSummaries,
     reachSummaries: room.reachSummaries,
@@ -141,12 +238,16 @@ function sendGameStarted(connection: MockSocketConnection): void {
   })
 }
 
-function sendPickFinished(connection: MockSocketConnection): void {
+function sendPickFinished(
+  connection: MockSocketConnection,
+  step: (typeof demoPickSteps)[number] = demoPickSteps[0],
+): void {
   const room = roomByPathParam(connection.roomId)
+  const result = applyDemoPickStep(room, step)
 
   if (connection.mode === 'participant') {
     sendEvent<ParticipantPickFinishedBody>(connection, 'PickFinished', {
-      pickedBall: 7,
+      pickedBall: result.pickedBall,
       pickState: 'idle',
       card: mockCard,
       cardChanges: {
@@ -154,24 +255,24 @@ function sendPickFinished(connection: MockSocketConnection): void {
         newReachLines: [],
         newBingoLines: [],
       },
-      pickedBalls: mockPickedBalls,
+      pickedBalls: result.pickedBalls,
       bingoSummaries: room.bingoSummaries,
       reachSummaries: room.reachSummaries,
-      newBingos: [],
-      newReaches: [],
+      newBingos: result.newBingos,
+      newReaches: result.newReaches,
     })
     return
   }
 
   sendEvent<DisplayPickFinishedBody>(connection, 'PickFinished', {
-    pickedBall: 7,
+    pickedBall: result.pickedBall,
     pickState: 'idle',
     participantCount: room.participants.length,
     bingoSummaries: room.bingoSummaries,
     reachSummaries: room.reachSummaries,
-    newBingos: [],
-    newReaches: [],
-    pickedBalls: mockPickedBalls,
+    newBingos: result.newBingos,
+    newReaches: result.newReaches,
+    pickedBalls: result.pickedBalls,
   })
 }
 
@@ -209,6 +310,23 @@ function scheduleDemoChatMessages(roomId: string): void {
   }
 }
 
+function scheduleDemoPickEvents(connection: MockSocketConnection): void {
+  if (scheduledDemoPickRoomIds.has(connection.roomId)) {
+    return
+  }
+
+  scheduledDemoPickRoomIds.add(connection.roomId)
+
+  for (const step of demoPickSteps) {
+    window.setTimeout(() => {
+      sendEvent<PickStartedBody>(connection, 'PickStarted', {})
+      window.setTimeout(() => {
+        sendPickFinished(connection, step)
+      }, 700)
+    }, step.delayMs)
+  }
+}
+
 function handleSocketMessage(connection: MockSocketConnection, data: unknown): void {
   if (typeof data !== 'string') {
     return
@@ -241,7 +359,7 @@ function handleSocketMessage(connection: MockSocketConnection, data: unknown): v
   }
 
   if (payload.type === 'mock:all-picked') {
-    sendEvent<AllPickedBody>(connection, 'AllPicked', { pickedBalls: mockPickedBalls })
+    sendEvent<AllPickedBody>(connection, 'AllPicked', { pickedBalls: initialPickedBalls })
   }
 }
 
@@ -288,5 +406,8 @@ export const roomWebSocketHandler = roomSocket.addEventListener(
 
     sendEvent(connection, 'Initialized', initializedBody(connection))
     scheduleDemoChatMessages(roomId)
+    if (mode === 'display') {
+      scheduleDemoPickEvents(connection)
+    }
   },
 )
