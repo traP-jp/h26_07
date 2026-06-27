@@ -24,26 +24,26 @@
       <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
       <RoomStatsBar />
     </div>
+    <DisplayParticipantQrCode :room-code="props.roomCode" :open="qrCodeVisible ?? false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRoute } from 'vue-router'
 
-import type { RoomCode, RoomId } from '@/api/schema'
+import type { RoomId } from '@/api/schema'
 import type { PickedBall } from '@/api/schema'
 import Iridescence from '@/components/backgrounds/Iridescence.vue'
 import NumberBall from '@/components/layouts/NumberBall.vue'
 import BallStateGrid from '@/components/display/BallStateGrid.vue'
 import { getBallPalette } from '@/components/display/ballPalette'
+import DisplayParticipantQrCode from '@/components/display/DisplayParticipantQrCode.vue'
 import RoomStatsBar from '@/components/display/RoomStatsBar.vue'
 import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 
-const route = useRoute()
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
 const {
@@ -52,10 +52,11 @@ const {
   mode,
   pickState,
   pickedBalls,
+  qrCodeVisible,
   roomId: connectedRoomId,
   roomState,
 } = storeToRefs(roomWebSocketStore)
-const roomCode = route.params.roomCode as RoomCode | undefined
+const props = defineProps<{ roomCode: string }>()
 const roomId = ref<RoomId | null>(null)
 const rollingPickedBall = ref<PickedBall | null>(null)
 const drumroll = useSoundEffect('drumroll', { loop: true })
@@ -131,9 +132,9 @@ watch(latestEvent, (event) => {
 })
 
 onMounted(async () => {
-  if (!roomCode) return
+  if (!props.roomCode) return
 
-  const room = await roomsStore.getRoomByCode(roomCode)
+  const room = await roomsStore.getRoomByCode(props.roomCode)
   roomId.value = room?.roomId ?? null
 
   if (!roomId.value) return
