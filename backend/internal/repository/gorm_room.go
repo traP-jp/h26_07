@@ -217,6 +217,7 @@ func (r *GormRoomRepository) replaceRoomCards(tx *gorm.DB, room *model.Room) err
 	cellRows := make([]dbmodel.RoomCardCell, 0, len(room.Cards)*25)
 	createdAt := aggregateTimestamp(room)
 	seenCardIDs := make(map[string]struct{}, len(room.Cards))
+	seenCardNumbers := make(map[model.CardNumber]struct{}, len(room.Cards))
 	for _, card := range room.Cards {
 		cardID := cardIDString(card.CardID)
 		if _, ok := seenCardIDs[cardID]; ok {
@@ -229,6 +230,10 @@ func (r *GormRoomRepository) replaceRoomCards(tx *gorm.DB, room *model.Room) err
 		if err := validateCardNumber(card.CardNumber); err != nil {
 			return err
 		}
+		if _, ok := seenCardNumbers[card.CardNumber]; ok {
+			return fmt.Errorf("%w: duplicate card number %s", ErrInvalidRoomAggregate, card.CardNumber)
+		}
+		seenCardNumbers[card.CardNumber] = struct{}{}
 
 		cardRows = append(cardRows, dbmodel.RoomCard{
 			CardID:      cardID,
