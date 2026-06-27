@@ -4,8 +4,11 @@ interface Props {
   title: string
   description: string
   roomCode: string
+  isAdmin?: boolean
 }
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isAdmin: false,
+})
 const joinUrl = computed(() => `./${props.roomCode}/participant`)
 const displayUrl = computed(() => `./${props.roomCode}/display`)
 const settingsUrl = computed(() => `./${props.roomCode}/settings`)
@@ -42,6 +45,7 @@ const controlerUrl = computed(() => `./${props.roomCode}/controler`)
         size="md"
         :to="settingsUrl"
         target="_blank"
+        v-if="isAdmin"
         >設定</UButton
       >
       <UButton
@@ -51,6 +55,7 @@ const controlerUrl = computed(() => `./${props.roomCode}/controler`)
         size="md"
         :to="controlerUrl"
         target="_blank"
+        v-if="isAdmin"
         >操作</UButton
       >
     </div>
