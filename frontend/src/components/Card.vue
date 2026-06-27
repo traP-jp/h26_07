@@ -14,7 +14,7 @@ const controlerUrl = computed(() => `./${props.roomCode}/controler`)
 
 <template>
   <UCard class="w-full p-1" variant="outline" :ui="{ body: 'p-2 sm:p-2' }">
-    <h2 class="font-bold text-2xl">{{ title }}</h2>
+    <h3 class="font-bold text-2xl">{{ title }}</h3>
     <p>{{ description }}</p>
     <div class="flex gap-2 mt-2 flex-wrap">
       <UButton
