@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { apiClient } from '@/api/apiClient'
-const room = defineProps<{ roomId: string }>()
+const room = defineProps<{ roomCode: string }>()
 const newMessage = ref('')
 type RequestBody = {
   content: string
@@ -18,7 +18,7 @@ const post = async () => {
   }
   try {
     const response = await apiClient.POST('/api/rooms/{roomId}/chats', {
-      params: { path: { roomId: room.roomId } },
+      params: { path: { roomId: room.roomCode } },
       body: data,
     })
     if (response.error) {

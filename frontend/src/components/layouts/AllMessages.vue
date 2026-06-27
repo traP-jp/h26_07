@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import type { Uuid, Message, DateTime } from '@/api/schema'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
-const room = defineProps<{ roomId: string; textarea: boolean }>()
+const room = defineProps<{ roomCode: string; textarea: boolean }>()
 const messages = ref<Message[]>([])
 
 const addUserMessage = (m: Message) => {
@@ -77,7 +77,7 @@ watch(
     </div>
   </div>
   <div v-if="room.textarea">
-    <PostMessage :room-id="room.roomId"></PostMessage>
+    <PostMessage :room-code="room.roomCode"></PostMessage>
   </div>
 </template>
 

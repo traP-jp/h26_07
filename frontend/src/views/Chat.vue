@@ -4,7 +4,7 @@ import AllMessages from '@/components/layouts/AllMessages.vue'
 
 <template>
   <div id="chat">
-    <AllMessages room-id="Hello" textarea></AllMessages>
+    <AllMessages room-code="123456" textarea></AllMessages>
   </div>
 </template>
 
