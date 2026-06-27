@@ -78,6 +78,11 @@ type BingoRecord struct {
 	CreatedAt time.Time
 }
 
+type BingoSummary struct {
+	User        User
+	BingoOrders []BingoOrder
+}
+
 type ReachRecord struct {
 	RecordID      RecordID
 	UserID        UserID
@@ -109,6 +114,19 @@ type Room struct {
 	Massages      []Massage
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+type RoomSummary struct {
+	RoomID         RoomID
+	RoomCode       RoomCode
+	State          RoomState
+	PickState      RoomPickState
+	QrCodeVisible  bool
+	Settings       RoomSettings
+	Participants   []Participant
+	BingoSummaries []BingoSummary
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 func NewRoom(
