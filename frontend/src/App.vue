@@ -1,7 +1,7 @@
 <template>
-  <UApp>
-    <RouterView />
-  </UApp>
+  <PostMessage room-id="" />
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import PostMessage from './components/layouts/PostMessage.vue'
+</script>
