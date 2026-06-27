@@ -53,8 +53,11 @@ const waitingRooms = computed(() => {
       {{ errorMessage }}
     </div>
     <template v-else>
-      <h2 class="text-3xl font-bold mb-2">あなたが参加しているルーム</h2>
-      <div class="grid grid-cols-1 gap-2 md:grid-cols-2 mb-6">
+      <h2 class="text-3xl font-bold mb-4">
+        <UIcon name="i-lucide-zap" class="text-yellow-400 inline" />
+        あなたが参加しているルーム
+      </h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
         <template v-for="room in joinedRooms" :key="room.roomCode">
           <Card
             :title="room.settings.name"
@@ -64,8 +67,8 @@ const waitingRooms = computed(() => {
         </template>
       </div>
 
-      <h2 class="text-3xl font-bold mb-2">あなたが管理しているルーム</h2>
-      <div class="grid grid-cols-1 gap-2 md:grid-cols-2 mb-6">
+      <h2 class="text-3xl font-bold mb-4">あなたが管理しているルーム</h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
         <template v-for="room in adminRooms" :key="room.roomCode">
           <Card
             :title="room.settings.name"
@@ -76,8 +79,8 @@ const waitingRooms = computed(() => {
         </template>
       </div>
 
-      <h2 class="text-3xl font-bold mb-2">参加者を募集しているルーム</h2>
-      <div class="grid grid-cols-1 gap-2 md:grid-cols-2 mb-6">
+      <h2 class="text-3xl font-bold mb-4">参加者を募集しているルーム</h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
         <template v-for="room in waitingRooms" :key="room.roomCode">
           <Card
             :title="room.settings.name"
