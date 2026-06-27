@@ -160,7 +160,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   z-index: -2;
-  opacity: 0.5;
+  opacity: 0.6;
   pointer-events: none;
 }
 
@@ -200,5 +200,14 @@ onBeforeUnmount(() => {
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.display-page__content::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgb(255 255 255 / 0.26);
+  backdrop-filter: blur(1px) saturate(1.15);
+  content: '';
 }
 </style>

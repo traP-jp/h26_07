@@ -1,9 +1,9 @@
 <template>
   <div class="room-stats-bar" aria-label="ルーム状況">
-    <UBadge v-for="stat in stats" :key="stat.label" class="room-stats-bar__item" color="primary">
+    <span v-for="stat in stats" :key="stat.label" class="room-stats-bar__item">
       <span class="room-stats-bar__text">{{ stat.label }}：</span>
       <span class="room-stats-bar__text">{{ stat.value }}人</span>
-    </UBadge>
+    </span>
   </div>
 </template>
 
@@ -36,29 +36,29 @@ const stats = computed(() => [
 .room-stats-bar {
   display: flex;
   box-sizing: border-box;
-  min-height: 46px;
+  min-height: 52px;
   width: 100%;
   max-width: 742px;
   align-items: center;
   justify-content: center;
-  gap: 3%;
-  border-radius: 12px;
-  background: rgb(245 250 255 / 0.9);
-  padding: 6px 3%;
-  backdrop-filter: blur(8px);
+  gap: 32px;
+  border-radius: 14px;
+
+  background: rgb(255 255 255 / 0.82);
+  border: 1px solid rgb(255 255 255 / 0.9);
+  box-shadow:
+    0 8px 24px rgb(31 74 130 / 0.12),
+    0 1px 2px rgb(31 74 130 / 0.08);
+
+  padding: 8px 28px;
 }
 
 .room-stats-bar__item {
-  min-width: 96px;
-  justify-content: center;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font-size: 20px;
+  color: #1f4f8f;
   font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: 0;
-  color: #1d5aa5;
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  line-height: 1;
 }
 
 .room-stats-bar__text {
