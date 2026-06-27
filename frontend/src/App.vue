@@ -1,7 +1,7 @@
 <template>
-  <AllMessages room-id="00000000-0000-0000-0000-000000000000" textarea />
+  <UApp>
+    <RouterView />
+  </UApp>
 </template>
 
-<script setup lang="ts">
-import AllMessages from './components/layouts/AllMessages.vue'
-</script>
+<script setup lang="ts"></script>
