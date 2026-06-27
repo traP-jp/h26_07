@@ -21,6 +21,7 @@ export const mockRooms: Room[] = [
       },
     ],
     bingoSummaries: [],
+    reachSummaries: [],
     settings: {
       name: 'デモビンゴ',
       description: 'モック API で動かす待機中のビンゴルームです。',
@@ -55,6 +56,11 @@ export const mockRooms: Room[] = [
         bingoOrders: [1],
       },
     ],
+    reachSummaries: [
+      {
+        user: { userId: 'howard127' },
+      },
+    ],
     settings: {
       name: '進行中ビンゴ',
       description: 'playing 状態の表示確認用モックルームです。',
@@ -85,6 +91,7 @@ export const mockRooms: Room[] = [
         bingoOrders: [1, 2],
       },
     ],
+    reachSummaries: [],
     settings: {
       name: '終了済みビンゴ',
       description: 'finished 状態の表示確認用モックルームです。',
@@ -104,6 +111,7 @@ function roomFromSettings(settings: GameSettings): Room {
     settings,
     participants: [],
     bingoSummaries: [],
+    reachSummaries: [],
     createdAt,
     updatedAt: createdAt,
   }
