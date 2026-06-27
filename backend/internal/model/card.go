@@ -49,7 +49,7 @@ func NewCard(cardID CardID, owner UserID, numbers [24]BallNumber) (Card, error) 
 }
 
 func (card *Card) Cell(index CellIndex) (CardCell, bool) {
-	if int(index) < 0 || int(index) >= len(card.Cells) {
+	if int(index) >= len(card.Cells) {
 		return CardCell{}, false
 	}
 	return card.Cells[index], true

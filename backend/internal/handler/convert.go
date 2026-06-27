@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"math/big"
 	"slices"
 	"strconv"
 
@@ -24,6 +26,7 @@ func convertCardToOpenAPI(room *model.Room, card model.Card) openapi.Card {
 	}
 	return openapi.Card{
 		CardID:      uuid.UUID(card.CardID).String(),
+		CardNumber:  cardNumber(card.CardID),
 		OwnerUserID: openapi.UserID(card.OwnerUserID),
 		Cells:       cells,
 		BingoLines:  convertLineIndexesToOpenAPI(bingoLineIndexes(room, card.OwnerUserID)),
@@ -86,4 +89,12 @@ func bingoLineIndexes(room *model.Room, userID model.UserID) []model.LineIndex {
 
 func lineCells(line model.LineIndex) ([5]model.CellIndex, bool) {
 	return model.LineCells(line)
+}
+
+func cardNumber(cardID model.CardID) string {
+	id := uuid.UUID(cardID)
+	number := new(big.Int).SetBytes(id[:])
+	mod := new(big.Int).Exp(big.NewInt(10), big.NewInt(36), nil)
+	number.Mod(number, mod)
+	return fmt.Sprintf("%036d", number)
 }

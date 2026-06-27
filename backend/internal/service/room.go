@@ -19,6 +19,12 @@ type RoomService struct {
 	events            RoomEventSender
 }
 
+type RoomSettingsUpdate struct {
+	Name        string
+	Description string
+	Admins      *[]model.UserID
+}
+
 func NewRoomService(transactionRunner repository.TransactionRunner, roomRepository repository.RoomRepository, events RoomEventSender) *RoomService {
 	return &RoomService{
 		transactionRunner: transactionRunner,
@@ -27,16 +33,19 @@ func NewRoomService(transactionRunner repository.TransactionRunner, roomReposito
 	}
 }
 func random6Digits() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(999999))
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%06d", n.Int64()+1), nil
+	return fmt.Sprintf("%06d", n.Int64()), nil
 }
 
 func (s *RoomService) CreateRoom(ctx context.Context, settings model.RoomSettings, creator model.UserID) (*model.Room, error) {
 	if !settings.HasAdmin(creator) {
 		settings.Admins = append(settings.Admins, creator)
+	}
+	if !settings.Valid() {
+		return nil, model.ErrRoomSettingsInvalid
 	}
 	uuid, err := uuid.NewV7()
 	if err != nil {
@@ -74,15 +83,16 @@ func (s *RoomService) PostParticipants(ctx context.Context, roomID model.RoomID,
 	if err != nil {
 		return err
 	}
-	room.Join(user, time.Now())
-	s.roomRepository.Save(ctx, room)
-	return nil
+	if err := room.Join(user, time.Now()); err != nil {
+		return err
+	}
+	return s.roomRepository.Save(ctx, room)
 }
 
 func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user model.UserID, content string) (*model.Message, error) {
 	room, err := s.roomRepository.FindByID(ctx, roomID)
 	if err != nil {
-		return nil, model.ErrRoomNotFound
+		return nil, err
 	}
 	messageID, err := uuid.NewV7()
 	if err != nil {
@@ -102,7 +112,7 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 			Author:    openapi.User{UserID: openapi.UserID(createdMessage.Author)},
 			Content:   createdMessage.Content,
 			CreatedAt: createdMessage.CreatedAt,
-			MessageID: openapi.UUID(messageID.String()),
+			MessageID: openapi.UUID(uuid.UUID(createdMessage.MessageID).String()),
 		}},
 	})
 	if err != nil {
@@ -114,7 +124,7 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 			Author:    openapi.User{UserID: openapi.UserID(createdMessage.Author)},
 			Content:   createdMessage.Content,
 			CreatedAt: createdMessage.CreatedAt,
-			MessageID: openapi.UUID(messageID.String()),
+			MessageID: openapi.UUID(uuid.UUID(createdMessage.MessageID).String()),
 		}},
 	})
 	if err != nil {
@@ -123,10 +133,70 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 	return &createdMessage, nil
 }
 
-func (s *RoomService) GetMessage(ctx context.Context, roomID model.RoomID) (*[]model.Message, error) {
+func (s *RoomService) GetMessages(ctx context.Context, roomID model.RoomID, user model.UserID) ([]model.Message, error) {
 	room, err := s.roomRepository.FindByID(ctx, roomID)
 	if err != nil {
-		return nil, model.ErrRoomNotFound
+		return nil, err
 	}
-	return &room.Messages, nil
+	if !room.CanViewChat(user) {
+		return nil, model.ErrRoomForbidden
+	}
+	return append([]model.Message(nil), room.Messages...), nil
+}
+
+func convertUserIDsToOpenAPI(userIDs []model.UserID) []openapi.User {
+	var result []openapi.User
+	for _, userID := range userIDs {
+		result = append(result, openapi.User{UserID: openapi.UserID(userID)})
+	}
+	return result
+}
+
+func convertRoomSettingsToOpenAPI(settings model.RoomSettings) openapi.GameSettings {
+	return openapi.GameSettings{
+		Name:        settings.Name,
+		Description: settings.Description,
+		Admins:      convertUserIDsToOpenAPI(settings.Admins),
+	}
+}
+
+func (s *RoomService) PutSettings(ctx context.Context, roomID model.RoomID, user model.UserID, input RoomSettingsUpdate) (model.RoomSettings, error) {
+	room, err := s.roomRepository.FindByID(ctx, roomID)
+	if err != nil {
+		return model.RoomSettings{}, err
+	}
+	admins := append([]model.UserID(nil), room.Settings.Admins...)
+	if input.Admins != nil {
+		admins = append([]model.UserID(nil), *input.Admins...)
+	}
+	settings := model.RoomSettings{
+		Name:        input.Name,
+		Description: input.Description,
+		Admins:      admins,
+	}
+	if err := room.UpdateSettings(user, settings, time.Now()); err != nil {
+		return model.RoomSettings{}, err
+	}
+	if err := s.roomRepository.Save(ctx, room); err != nil {
+		return model.RoomSettings{}, err
+	}
+	err = s.events.SendRoom(ctx, roomID, openapi.DisplayGameSettingsUpdatedEvent{
+		Type: openapi.DisplayGameSettingsUpdatedEventTypeGameSettingsUpdated,
+		Body: openapi.DisplayGameSettingsUpdatedBody{
+			Settings: convertRoomSettingsToOpenAPI(room.Settings),
+		},
+	})
+	if err != nil {
+		return model.RoomSettings{}, err
+	}
+	err = s.events.SendRoom(ctx, roomID, openapi.ParticipantGameSettingsUpdatedEvent{
+		Type: openapi.ParticipantGameSettingsUpdatedEventTypeGameSettingsUpdated,
+		Body: openapi.ParticipantGameSettingsUpdatedBody{
+			Settings: convertRoomSettingsToOpenAPI(room.Settings),
+		},
+	})
+	if err != nil {
+		return model.RoomSettings{}, err
+	}
+	return room.Settings, nil
 }

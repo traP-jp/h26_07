@@ -235,8 +235,11 @@ func (room *Room) CanPostMessage(user UserID) bool {
 }
 
 func (room *Room) PostMessage(user UserID, content string, now time.Time, messageID MessageID) (Message, error) {
-	if !room.CanPostMessage(user) {
+	if !room.IsParticipant(user) && !room.IsAdmin(user) {
 		return Message{}, ErrRoomMessageNotAllowed
+	}
+	if room.State == RoomStateFinished {
+		return Message{}, ErrRoomMessageNotPostable
 	}
 	if content == "" || len(content) > 500 {
 		return Message{}, ErrMessageInvalid
@@ -412,7 +415,10 @@ func (settings RoomSettings) Valid() bool {
 }
 
 func (room *Room) UpdateSettings(actor UserID, settings RoomSettings, now time.Time) error {
-	if !room.CanUpdateSettings(actor) {
+	if !room.IsAdmin(actor) {
+		return ErrRoomForbidden
+	}
+	if room.State == RoomStateFinished {
 		return ErrRoomNotConfigurable
 	}
 	if !settings.Valid() {
@@ -591,7 +597,7 @@ func (room *Room) FinishPick(actor UserID, picked BallNumber, nextRecordID Recor
 
 func (room *Room) ShowQRCode(actor UserID, now time.Time) error {
 	if !room.IsAdmin(actor) {
-		return ErrRoomNotConfigurable
+		return ErrRoomForbidden
 	}
 	room.QrCodeVisible = true
 	room.UpdatedAt = now
@@ -600,7 +606,7 @@ func (room *Room) ShowQRCode(actor UserID, now time.Time) error {
 
 func (room *Room) HideQRCode(actor UserID, now time.Time) error {
 	if !room.IsAdmin(actor) {
-		return ErrRoomNotConfigurable
+		return ErrRoomForbidden
 	}
 	room.QrCodeVisible = false
 	room.UpdatedAt = now

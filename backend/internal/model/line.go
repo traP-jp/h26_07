@@ -28,7 +28,7 @@ func AllBingoLines() []LineIndex {
 }
 
 func (line LineIndex) Valid() bool {
-	return int(line) >= 0 && int(line) < BingoLineCount
+	return int(line) < BingoLineCount
 }
 
 func LineCells(line LineIndex) ([5]CellIndex, bool) {
