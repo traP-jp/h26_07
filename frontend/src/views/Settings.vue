@@ -5,6 +5,7 @@ import { apiClient } from '@/api/apiClient'
 import { useCurrentUserStore } from '@/stores/currentUser'
 import { useRoomsStore } from '@/stores/rooms'
 import { useClipboard } from '@vueuse/core'
+import { useToast } from '@nuxt/ui/composables'
 
 const roomsStore = useRoomsStore()
 
