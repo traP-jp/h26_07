@@ -1,4 +1,5 @@
 {
+
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "tsconfig.json": "tsconfig.*.json, env.d.ts, typed-router.d.ts",
@@ -8,6 +9,9 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
   },
+  "editor.detectIndentation": false,
   "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
   "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

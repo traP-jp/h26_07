@@ -586,16 +586,10 @@ components:
       type: object
       additionalProperties: false
       properties:
-        code:
-          type: string
         message:
           type: string
-        description:
-          type: string
       required:
-        - code
         - message
-        - description
 
     User:
       type: object
@@ -603,11 +597,8 @@ components:
       properties:
         userId:
           $ref: "#/components/schemas/UserId"
-        name:
-          type: string
       required:
         - userId
-        - name
 
     GameSettingsInput:
       type: object
@@ -781,21 +772,10 @@ components:
         - createdAt
 
     PickedBall:
-      type: object
-      additionalProperties: false
-      properties:
-        pickedBallId:
-          $ref: "#/components/schemas/UUID"
-        pickedAt:
-          $ref: "#/components/schemas/DateTime"
-        number:
-          type: integer
-          minimum: 1
-          maximum: 75
-      required:
-        - pickedBallId
-        - pickedAt
-        - number
+      type: integer
+      minimum: 1
+      maximum: 75
+      description: 確定済みの通常数字球。1..75。
 
     CardChanges:
       type: object
@@ -1152,14 +1132,32 @@ components:
         - settings
 
     ParticipantWebSocketEvent:
-      allOf:
-        - $ref: "#/components/schemas/WebSocketEventBase"
       description: participant mode に送信される WebSocket event。body は event type ごとの participant schema を使う。
+      oneOf:
+        - $ref: "#/components/schemas/ParticipantInitializedEvent"
+        - $ref: "#/components/schemas/ParticipantGameStartedEvent"
+        - $ref: "#/components/schemas/ParticipantPickStartedEvent"
+        - $ref: "#/components/schemas/ParticipantPickCanceledEvent"
+        - $ref: "#/components/schemas/ParticipantPickFinishedEvent"
+        - $ref: "#/components/schemas/ParticipantGameFinishedEvent"
+        - $ref: "#/components/schemas/ParticipantMessageCreatedEvent"
+        - $ref: "#/components/schemas/ParticipantAllPickedEvent"
+        - $ref: "#/components/schemas/ParticipantGameSettingsUpdatedEvent"
 
     DisplayWebSocketEvent:
-      allOf:
-        - $ref: "#/components/schemas/WebSocketEventBase"
       description: display mode に送信される WebSocket event。body は event type ごとの display schema を使い、card を含めない。
+      oneOf:
+        - $ref: "#/components/schemas/DisplayInitializedEvent"
+        - $ref: "#/components/schemas/DisplayGameStartedEvent"
+        - $ref: "#/components/schemas/DisplayPickStartedEvent"
+        - $ref: "#/components/schemas/DisplayPickCanceledEvent"
+        - $ref: "#/components/schemas/DisplayPickFinishedEvent"
+        - $ref: "#/components/schemas/DisplayGameFinishedEvent"
+        - $ref: "#/components/schemas/DisplayShowQRCodeEvent"
+        - $ref: "#/components/schemas/DisplayHideQRCodeEvent"
+        - $ref: "#/components/schemas/DisplayMessageCreatedEvent"
+        - $ref: "#/components/schemas/DisplayAllPickedEvent"
+        - $ref: "#/components/schemas/DisplayGameSettingsUpdatedEvent"
 
     ParticipantInitializedEvent:
       allOf:
