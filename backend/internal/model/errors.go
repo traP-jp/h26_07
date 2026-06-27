@@ -8,7 +8,7 @@ var (
 	ErrRoomNotJoinable       = errors.New("room is not joinable")
 	ErrRoomMessageNotAllowed = errors.New("room message is not allowed")
 	ErrMessageInvalid        = errors.New("message is invalid")
-	ErrRoomSettingsInvalid   = errors.New("room settings is invalid")
+	ErrRoomSettingsInvalid   = errors.New("room settings are invalid")
 	ErrRoomNotConfigurable   = errors.New("room is not configurable")
 	ErrRoomNotStartable      = errors.New("room is not startable")
 	ErrRoomNotFinishable     = errors.New("room is not finishable")
