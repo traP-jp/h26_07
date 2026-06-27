@@ -729,15 +729,6 @@ func loadRoomSummaryReachSummaries(db *gorm.DB, roomIDs []string, summaryByID ma
 		return err
 	}
 
-	var bingoRows []dbmodel.RoomBingoRecord
-	if err := db.Where("room_id IN ?", roomIDs).
-		Order("room_id ASC").
-		Order("bingo_order ASC").
-		Find(&bingoRows).
-		Error; err != nil {
-		return err
-	}
-
 	reachRecordsByRoomID := make(map[string][]model.ReachRecord, len(roomIDs))
 	for _, row := range reachRows {
 		reachRecordsByRoomID[row.RoomID] = append(reachRecordsByRoomID[row.RoomID], model.ReachRecord{
@@ -747,10 +738,12 @@ func loadRoomSummaryReachSummaries(db *gorm.DB, roomIDs []string, summaryByID ma
 	}
 
 	bingoRecordsByRoomID := make(map[string][]model.BingoRecord, len(roomIDs))
-	for _, row := range bingoRows {
-		bingoRecordsByRoomID[row.RoomID] = append(bingoRecordsByRoomID[row.RoomID], model.BingoRecord{
-			UserID: model.UserID(row.UserID),
-		})
+	for _, roomID := range roomIDs {
+		for _, bingoSummary := range summaryByID[roomID].BingoSummaries {
+			bingoRecordsByRoomID[roomID] = append(bingoRecordsByRoomID[roomID], model.BingoRecord{
+				UserID: bingoSummary.UserID,
+			})
+		}
 	}
 
 	for _, roomID := range roomIDs {

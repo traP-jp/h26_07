@@ -45,14 +45,20 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 		Line:          1,
 		LastCellIndex: 4,
 		CreatedAt:     createdAt.Add(3 * time.Minute),
+	}, {
+		RecordID:      mustRecordID("77777777-7777-7777-7777-777777777777"),
+		UserID:        "bob",
+		Line:          2,
+		LastCellIndex: 9,
+		CreatedAt:     createdAt.Add(4 * time.Minute),
 	}}
 	room.Messages = []model.Message{{
 		MessageID: mustMessageID("55555555-5555-5555-5555-555555555555"),
 		Content:   "hello",
 		Author:    "alice",
-		CreatedAt: createdAt.Add(4 * time.Minute),
+		CreatedAt: createdAt.Add(5 * time.Minute),
 	}}
-	room.UpdatedAt = createdAt.Add(5 * time.Minute)
+	room.UpdatedAt = createdAt.Add(6 * time.Minute)
 
 	if err := repo.Save(ctx, room); err != nil {
 		t.Fatalf("failed to save room: %v", err)
@@ -76,6 +82,10 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 		len(summaries[0].BingoSummaries[0].BingoOrders) != 1 ||
 		summaries[0].BingoSummaries[0].BingoOrders[0] != 1 {
 		t.Fatalf("unexpected room summary bingos: %+v", summaries[0].BingoSummaries)
+	}
+	if len(summaries[0].ReachSummaries) != 1 ||
+		summaries[0].ReachSummaries[0].UserID != "bob" {
+		t.Fatalf("unexpected room summary reaches: %+v", summaries[0].ReachSummaries)
 	}
 
 	loaded, err := repo.FindByID(ctx, roomID)
@@ -110,7 +120,11 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if len(loaded.BingoRecords) != 1 || loaded.BingoRecords[0].Order != 1 {
 		t.Fatalf("unexpected loaded bingo records: %+v", loaded.BingoRecords)
 	}
-	if len(loaded.ReachRecords) != 1 || loaded.ReachRecords[0].LastCellIndex != 4 {
+	if len(loaded.ReachRecords) != 2 ||
+		loaded.ReachRecords[0].UserID != "alice" ||
+		loaded.ReachRecords[0].LastCellIndex != 4 ||
+		loaded.ReachRecords[1].UserID != "bob" ||
+		loaded.ReachRecords[1].LastCellIndex != 9 {
 		t.Fatalf("unexpected loaded reach records: %+v", loaded.ReachRecords)
 	}
 	if len(loaded.Messages) != 1 || loaded.Messages[0].Content != "hello" || loaded.Messages[0].Author != "alice" {

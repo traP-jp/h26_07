@@ -266,12 +266,12 @@ func (h *RoomHandler) GetMessages(c *echo.Context) error {
 	messages, err := h.roomService.GetMessage(c.Request().Context(), model.RoomID(roomID))
 	if err != nil {
 		if errors.Is(err, model.ErrRoomNotFound) {
-			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "room not found"})
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
 		} else if errors.Is(err, model.ErrRoomMessageNotAllowed) {
-			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "room message not allowed"})
-		} else {
-			return c.JSON(http.StatusInternalServerError, err)
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "room message not allowed"})
 		}
+
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
 	}
 	result := make([]openapi.Message, 0, len(*messages))
 	for _, message := range *messages {
