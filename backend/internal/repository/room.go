@@ -15,5 +15,5 @@ var (
 type RoomRepository interface {
 	Save(ctx context.Context, room *model.Room) error
 	FindByID(ctx context.Context, roomID model.RoomID) (*model.Room, error)
-	List(ctx context.Context) ([]*model.Room, error)
+	List(ctx context.Context) ([]model.RoomSummary, error)
 }
