@@ -86,16 +86,14 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 2%;
   overflow: hidden;
   padding: 3% 3% 2%;
-  gap: 5%;
+  gap: 6%;
 }
 
 .display-page__latest-ball {
   width: 100%;
-  max-width: 800px;
-  height: 30%;
+  height: 34%;
   display: grid;
   place-items: center;
 }

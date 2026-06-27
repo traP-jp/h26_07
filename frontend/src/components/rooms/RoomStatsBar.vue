@@ -1,14 +1,6 @@
 <template>
-  <div
-    class="room-stats-bar flex items-center justify-center rounded-xl shadow-md backdrop-blur"
-    aria-label="ルーム状況"
-  >
-    <UBadge
-      v-for="stat in stats"
-      :key="stat.label"
-      class="room-stats-bar__item justify-center border-0 bg-transparent p-0 font-extrabold tracking-normal"
-      color="primary"
-    >
+  <div class="room-stats-bar" aria-label="ルーム状況">
+    <UBadge v-for="stat in stats" :key="stat.label" class="room-stats-bar__item" color="primary">
       <span class="room-stats-bar__text">{{ stat.label }}：</span>
       <span class="room-stats-bar__text">{{ stat.value }}人</span>
     </UBadge>
@@ -42,19 +34,30 @@ const stats = computed(() => [
 
 <style scoped>
 .room-stats-bar {
+  display: flex;
   box-sizing: border-box;
   min-height: 46px;
   width: 100%;
   max-width: 742px;
+  align-items: center;
+  justify-content: center;
   gap: 3%;
+  border-radius: 12px;
   background: rgb(245 250 255 / 0.9);
   padding: 6px 3%;
+  backdrop-filter: blur(8px);
 }
 
 .room-stats-bar__item {
   min-width: 96px;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
   font-size: 20px;
+  font-weight: 800;
   line-height: 1.25;
+  letter-spacing: 0;
   color: #1d5aa5;
 }
 

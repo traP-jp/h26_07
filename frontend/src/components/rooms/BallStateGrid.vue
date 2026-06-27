@@ -15,6 +15,7 @@ type BallCell = {
   state: Extract<CardCellState, 'open' | 'closed'>
   isLatest: boolean
   ballColor: string
+  ringColor: string
   textColor: string
 }
 
@@ -49,6 +50,7 @@ const balls = computed<BallCell[]>(() =>
       state: isPicked ? 'open' : 'closed',
       isLatest: props.latestPickedBall === number,
       ballColor: isPicked ? palette.picked : palette.waiting,
+      ringColor: palette.ring,
       textColor: isPicked ? '#ffffff' : palette.text,
     }
   }),
@@ -66,7 +68,8 @@ const balls = computed<BallCell[]>(() =>
       >
         <span
           v-if="ball.isLatest"
-          class="pointer-events-none absolute -inset-1 rounded-full border-3 border-[#f6c654]"
+          class="pointer-events-none absolute -inset-1 rounded-full border-3"
+          :style="{ borderColor: ball.ringColor }"
           aria-hidden="true"
         />
         <NumberBall
