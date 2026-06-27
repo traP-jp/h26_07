@@ -10,7 +10,19 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [vue(), ui(), vueDevTools()],
+    plugins: [
+      vue(),
+      ui({
+        ui: {
+          colors: {
+            primary: 'rose',
+            secondary: 'purple',
+            tertiary: 'indigo'
+          }
+        }
+      }),
+      vueDevTools(),
+    ],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
