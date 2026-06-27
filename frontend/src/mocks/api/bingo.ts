@@ -651,13 +651,21 @@ function createMessage(author: User, content: string): Message {
 }
 
 function validateSettingsInput(input: GameSettingsInput | undefined): input is GameSettingsInput {
-  return (
-    input !== undefined &&
-    typeof input.name === 'string' &&
-    typeof input.description === 'string' &&
-    (input.adminUserIds === undefined ||
-      (Array.isArray(input.adminUserIds) && input.adminUserIds.length > 0))
-  )
+  if (
+    input === undefined ||
+    typeof input.name !== 'string' ||
+    input.name.trim() === '' ||
+    typeof input.description !== 'string' ||
+    input.description.trim() === ''
+  ) {
+    return false
+  }
+
+  if (input.adminUserIds === undefined) {
+    return true
+  }
+
+  return Array.isArray(input.adminUserIds) && uniqueUserIds(input.adminUserIds).length > 0
 }
 
 function startRoom(roomState: MockRoom): ApiError | undefined {
