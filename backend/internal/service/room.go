@@ -13,12 +13,14 @@ import (
 )
 
 type RoomService struct {
-	roomRepository repository.RoomRepository
+	transactionRunner repository.TransactionRunner
+	roomRepository    repository.RoomRepository
 }
 
-func NewRoomService(roomRepository repository.RoomRepository) *RoomService {
+func NewRoomService(transactionRunner repository.TransactionRunner, roomRepository repository.RoomRepository) *RoomService {
 	return &RoomService{
-		roomRepository: roomRepository,
+		transactionRunner: transactionRunner,
+		roomRepository:    roomRepository,
 	}
 }
 func random6Digits() (string, error) {
@@ -48,7 +50,11 @@ func (s *RoomService) CreateRoom(ctx context.Context, settings model.RoomSetting
 		settings,
 		time.Now(),
 	)
-	s.roomRepository.Save(ctx, room)
+	if err := s.transactionRunner.WithinTransaction(ctx, func(ctx context.Context) error {
+		return s.roomRepository.Save(ctx, room)
+	}); err != nil {
+		return nil, err
+	}
 	return room, nil
 }
 
