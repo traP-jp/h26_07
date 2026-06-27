@@ -10,7 +10,16 @@ const iconUrl = computed(() => `https://q.trap.jp/api/v3/public/icon/${userId.va
 <template>
   <UHeader title="BINGO ONLINE" :toggle="false">
     <template #right>
-      <UButton icon="i-lucide-plus" to="./new" target="_blank">新しいルームを作成</UButton>
+      <UButton
+        icon="i-lucide-plus"
+        to="./new"
+        target="_blank"
+        aria-label="新しいルームを作成"
+        class="sm:hidden rounded-full"
+      ></UButton>
+      <UButton icon="i-lucide-plus" to="./new" target="_blank" class="hidden sm:inline-flex"
+        >新しいルームを作成</UButton
+      >
       <UAvatar :src="iconUrl" loading="lazy" />
       <div>{{ userId }}</div>
     </template>
