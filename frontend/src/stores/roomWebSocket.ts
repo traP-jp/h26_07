@@ -70,7 +70,6 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
   const card = ref<Card | null>(null)
   const participantCount = ref<number | null>(null)
   const qrCodeVisible = ref<boolean | null>(null)
-  const messages = ref<Message[]>([])
 
   const isConnected = computed(() => status.value === 'open')
   const canUseParticipantCard = computed(() => mode.value === 'participant' && card.value !== null)
@@ -90,7 +89,6 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
     card.value = null
     participantCount.value = null
     qrCodeVisible.value = null
-    messages.value = []
   }
 
   function applyEvent(event: RoomWebSocketEvent) {
@@ -172,7 +170,6 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
         break
       case 'MessageCreated':
         latestMessage.value = event.body.message
-        messages.value = [...messages.value, event.body.message]
         break
       case 'AllPicked':
         pickedBalls.value = event.body.pickedBalls
@@ -265,7 +262,6 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
     card,
     participantCount,
     qrCodeVisible,
-    messages,
     isConnected,
     canUseParticipantCard,
     connect,

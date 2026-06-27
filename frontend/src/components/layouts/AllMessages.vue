@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Uuid, Message, DateTime } from '@/api/schema'
+import {} from '@/stores/roomWebSocket'
 const room = defineProps<{ roomId: string; textarea: boolean }>()
 const messages = ref<Message[]>([])
 
@@ -21,7 +22,7 @@ defineExpose({ addUserMessage, addSpecialMessage })
 </script>
 
 <template>
-  <div>
+  <div id="chatContainer">
     <div v-for="message in messages" :key="message.messageId">
       <Message :user-id="message.author.userId" :content="message.content"></Message>
     </div>
@@ -30,3 +31,14 @@ defineExpose({ addUserMessage, addSpecialMessage })
     <PostMessage :room-id="room.roomId"></PostMessage>
   </div>
 </template>
+
+<style>
+#chatContainer {
+  min-height: calc(100% - 150px);
+  overflow: scroll;
+  scrollbar-width: none;
+}
+#chatContainer::-webkit-scrollbar {
+  display: none;
+}
+</style>

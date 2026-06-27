@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { apiClient } from '@/api/apiClient'
 const room = defineProps<{ roomId: string }>()
 const newMessage = ref('')
 type RequestBody = {
@@ -10,18 +11,13 @@ const post = async () => {
     content: newMessage.value,
   }
   try {
-    const response = await fetch(`/api/rooms/${room.roomId}/chats`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+    const response = await apiClient.POST('/api/rooms/{roomId}/chats', {
+      params: { path: { roomId: room.roomId } },
+      body: data,
     })
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`)
+    if (response.error) {
+      throw new Error(`HTTP Error: ${response.error}`)
     }
-    const result = await response.json()
-    console.log('Success', result)
   } catch (error) {
     console.error('Error', error)
   }
