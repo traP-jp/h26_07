@@ -46,8 +46,8 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 		LastCellIndex: 4,
 		CreatedAt:     createdAt.Add(3 * time.Minute),
 	}}
-	room.Massages = []model.Massage{{
-		MassageID: mustMessageID("55555555-5555-5555-5555-555555555555"),
+	room.Messages = []model.Message{{
+		MessageID: mustMessageID("55555555-5555-5555-5555-555555555555"),
 		Content:   "hello",
 		Author:    "alice",
 		CreatedAt: createdAt.Add(4 * time.Minute),
@@ -113,8 +113,8 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if len(loaded.ReachRecords) != 1 || loaded.ReachRecords[0].LastCellIndex != 4 {
 		t.Fatalf("unexpected loaded reach records: %+v", loaded.ReachRecords)
 	}
-	if len(loaded.Massages) != 1 || loaded.Massages[0].Content != "hello" || loaded.Massages[0].Author != "alice" {
-		t.Fatalf("unexpected loaded messages: %+v", loaded.Massages)
+	if len(loaded.Messages) != 1 || loaded.Messages[0].Content != "hello" || loaded.Messages[0].Author != "alice" {
+		t.Fatalf("unexpected loaded messages: %+v", loaded.Messages)
 	}
 
 	room.Settings.Name = "updated game"
@@ -123,7 +123,7 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	room.PickedBalls = []model.BallNumber{1}
 	room.BingoRecords = nil
 	room.ReachRecords = nil
-	room.Massages = nil
+	room.Messages = nil
 	room.UpdatedAt = createdAt.Add(10 * time.Minute)
 	if err := repo.Save(ctx, room); err != nil {
 		t.Fatalf("failed to update room: %v", err)
@@ -136,7 +136,7 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if updated.Settings.Name != "updated game" {
 		t.Fatalf("unexpected updated settings: %+v", updated.Settings)
 	}
-	if len(updated.Participants) != 0 || len(updated.Cards) != 0 || len(updated.BingoRecords) != 0 || len(updated.ReachRecords) != 0 || len(updated.Massages) != 0 {
+	if len(updated.Participants) != 0 || len(updated.Cards) != 0 || len(updated.BingoRecords) != 0 || len(updated.ReachRecords) != 0 || len(updated.Messages) != 0 {
 		t.Fatalf("expected replaced child rows to be empty: %+v", updated)
 	}
 	if len(updated.PickedBalls) != 1 || updated.PickedBalls[0] != 1 {
@@ -347,6 +347,6 @@ func mustRecordID(value string) model.RecordID {
 	return model.RecordID(uuid.MustParse(value))
 }
 
-func mustMessageID(value string) model.MassageID {
-	return model.MassageID(uuid.MustParse(value))
+func mustMessageID(value string) model.MessageID {
+	return model.MessageID(uuid.MustParse(value))
 }

@@ -79,7 +79,7 @@ func (s *RoomService) PostParticipants(ctx context.Context, roomID model.RoomID,
 	return nil
 }
 
-func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user model.UserID, content string) (*model.Massage, error) {
+func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user model.UserID, content string) (*model.Message, error) {
 	room, err := s.roomRepository.FindByID(ctx, roomID)
 	if err != nil {
 		return nil, model.ErrRoomNotFound
@@ -88,7 +88,7 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 	if err != nil {
 		return nil, err
 	}
-	createdMessage, err := room.PostMassage(user, content, time.Now(), model.MassageID(messageID))
+	createdMessage, err := room.PostMessage(user, content, time.Now(), model.MessageID(messageID))
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +97,7 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 		return nil, err
 	}
 	err = s.events.SendRoom(ctx, roomID, openapi.ParticipantMessageCreatedEvent{
+		Type: openapi.ParticipantMessageCreatedEventTypeMessageCreated,
 		Body: openapi.MessageCreatedBody{Message: openapi.Message{
 			Author:    openapi.User{UserID: openapi.UserID(createdMessage.Author)},
 			Content:   createdMessage.Content,
@@ -108,6 +109,7 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 		return nil, err
 	}
 	err = s.events.SendRoom(ctx, roomID, openapi.DisplayMessageCreatedEvent{
+		Type: openapi.DisplayMessageCreatedEventTypeMessageCreated,
 		Body: openapi.MessageCreatedBody{Message: openapi.Message{
 			Author:    openapi.User{UserID: openapi.UserID(createdMessage.Author)},
 			Content:   createdMessage.Content,
@@ -121,10 +123,10 @@ func (s *RoomService) PostMessage(ctx context.Context, roomID model.RoomID, user
 	return &createdMessage, nil
 }
 
-func (s *RoomService) GetMessage(ctx context.Context, roomID model.RoomID) (*[]model.Massage, error) {
+func (s *RoomService) GetMessage(ctx context.Context, roomID model.RoomID) (*[]model.Message, error) {
 	room, err := s.roomRepository.FindByID(ctx, roomID)
 	if err != nil {
 		return nil, model.ErrRoomNotFound
 	}
-	return &room.Massages, nil
+	return &room.Messages, nil
 }

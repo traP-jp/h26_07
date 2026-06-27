@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"cmp"
 	"errors"
 	"net/http"
-	"slices"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
@@ -74,38 +72,29 @@ func convertParticipantsToOpenAPI(participants []model.Participant) []openapi.Pa
 	return result
 }
 
-func toOpenAPIBingoSummaries(records []model.BingoRecord) []openapi.BingoSummary {
-	sortedRecords := slices.Clone(records)
-	slices.SortFunc(sortedRecords, func(a, b model.BingoRecord) int {
-		if n := cmp.Compare(a.Order, b.Order); n != 0 {
-			return n
+func convertBingoSummariesToOpenAPI(bingoSummaries []model.BingoSummary) []openapi.BingoSummary {
+	result := make([]openapi.BingoSummary, 0, len(bingoSummaries))
+	for _, bingoSummary := range bingoSummaries {
+		bingoOrders := make([]int, 0, len(bingoSummary.BingoOrders))
+		for _, bingoOrder := range bingoSummary.BingoOrders {
+			bingoOrders = append(bingoOrders, int(bingoOrder))
 		}
-		return cmp.Compare(a.UserID, b.UserID)
-	})
-
-	summaries := make([]openapi.BingoSummary, 0)
-	indexByUserID := make(map[model.UserID]int)
-
-	for _, record := range sortedRecords {
-		index, ok := indexByUserID[record.UserID]
-		if !ok {
-			index = len(summaries)
-			indexByUserID[record.UserID] = index
-			summaries = append(summaries, openapi.BingoSummary{
-				User: openapi.User{
-					UserID: openapi.UserID(record.UserID),
-				},
-				BingoOrders: []int{},
-			})
-		}
-
-		summaries[index].BingoOrders = append(
-			summaries[index].BingoOrders,
-			int(record.Order),
-		)
+		result = append(result, openapi.BingoSummary{
+			BingoOrders: bingoOrders,
+			User:        openapi.User{UserID: openapi.UserID(bingoSummary.UserID)},
+		})
 	}
+	return result
+}
 
-	return summaries
+func convertReachSummariesToOpenAPI(reachSummaries []model.ReachSummary) []openapi.ReachSummary {
+	result := make([]openapi.ReachSummary, 0, len(reachSummaries))
+	for _, reachSummary := range reachSummaries {
+		result = append(result, openapi.ReachSummary{
+			User: openapi.User{UserID: openapi.UserID(reachSummary.UserID)},
+		})
+	}
+	return result
 }
 
 func convertRoom(room *model.Room) openapi.Room {
@@ -116,7 +105,8 @@ func convertRoom(room *model.Room) openapi.Room {
 		PickState:      openapi.PickState(room.PickState),
 		QrCodeVisible:  room.QrCodeVisible,
 		Participants:   convertParticipantsToOpenAPI(room.Participants),
-		BingoSummaries: toOpenAPIBingoSummaries(room.BingoRecords),
+		BingoSummaries: convertBingoSummariesToOpenAPI(room.BingoSummaries()),
+		ReachSummaries: convertReachSummariesToOpenAPI(room.ReachSummaries()),
 		CreatedAt:      room.CreatedAt,
 		UpdatedAt:      room.UpdatedAt,
 		RoomCode:       openapi.RoomCode(room.RoomCode),
@@ -167,24 +157,6 @@ func (h *RoomHandler) GetRoom(c *echo.Context) error {
 	return c.JSON(http.StatusOK, convertRoom(room))
 }
 
-func convertBingoSummariesFromModelBingoSummary(bingosummaryies []model.BingoSummary) []openapi.BingoSummary {
-	result := make([]openapi.BingoSummary, 0, len(bingosummaryies))
-	for _, bingosummary := range bingosummaryies {
-		bingoOrders := make([]int, 0, len(bingosummary.BingoOrders))
-		for _, bingoOrder := range bingosummary.BingoOrders {
-			bingoOrders = append(bingoOrders, int(bingoOrder))
-		}
-		result = append(result,
-
-			openapi.BingoSummary{
-				BingoOrders: bingoOrders,
-				User:        openapi.User{UserID: openapi.UserID(bingosummary.UserID)},
-			},
-		)
-	}
-	return result
-}
-
 func convertRoomSummary(rooms []model.RoomSummary) []openapi.Room {
 	result := make([]openapi.Room, 0, len(rooms))
 	for _, room := range rooms {
@@ -196,7 +168,8 @@ func convertRoomSummary(rooms []model.RoomSummary) []openapi.Room {
 				PickState:      openapi.PickState(room.PickState),
 				QrCodeVisible:  room.QrCodeVisible,
 				Participants:   convertParticipantsToOpenAPI(room.Participants),
-				BingoSummaries: convertBingoSummariesFromModelBingoSummary(room.BingoSummaries),
+				BingoSummaries: convertBingoSummariesToOpenAPI(room.BingoSummaries),
+				ReachSummaries: convertReachSummariesToOpenAPI(room.ReachSummaries),
 				CreatedAt:      room.CreatedAt,
 				UpdatedAt:      room.UpdatedAt,
 				RoomCode:       openapi.RoomCode(room.RoomCode),
@@ -238,9 +211,9 @@ func (h *RoomHandler) PostParticipant(c *echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func convertMessageToOpenAPI(message model.Massage) openapi.Message {
+func convertMessageToOpenAPI(message model.Message) openapi.Message {
 	return openapi.Message{
-		MessageID: uuid.UUID(message.MassageID).String(),
+		MessageID: uuid.UUID(message.MessageID).String(),
 		Content:   message.Content,
 		Author: openapi.User{
 			UserID: openapi.UserID(message.Author),
@@ -267,11 +240,11 @@ func (h *RoomHandler) PostMessage(c *echo.Context) error {
 	content := createMessageRequest.Content
 	message, err := h.roomService.PostMessage(c.Request().Context(), model.RoomID(roomID), user, content)
 	if err != nil {
-		if errors.Is(err, model.ErrMassageInvalid) {
+		if errors.Is(err, model.ErrMessageInvalid) {
 			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "message invalid"})
 		} else if errors.Is(err, model.ErrRoomNotFound) {
 			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
-		} else if errors.Is(err, model.ErrRoomMassageNotAllowed) {
+		} else if errors.Is(err, model.ErrRoomMessageNotAllowed) {
 			return c.JSON(http.StatusForbidden, openapi.Error{Message: "message not allowed"})
 		} else {
 			return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
@@ -294,7 +267,7 @@ func (h *RoomHandler) GetMessages(c *echo.Context) error {
 	if err != nil {
 		if errors.Is(err, model.ErrRoomNotFound) {
 			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "room not found"})
-		} else if errors.Is(err, model.ErrRoomMassageNotAllowed) {
+		} else if errors.Is(err, model.ErrRoomMessageNotAllowed) {
 			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "room message not allowed"})
 		} else {
 			return c.JSON(http.StatusInternalServerError, err)
