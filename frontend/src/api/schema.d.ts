@@ -386,11 +386,8 @@ export interface components {
       author: components['schemas']['User']
       createdAt: components['schemas']['DateTime']
     }
-    PickedBall: {
-      pickedBallId: components['schemas']['UUID']
-      pickedAt: components['schemas']['DateTime']
-      number: number
-    }
+    /** @description 確定済みの通常数字球。1..75。 */
+    PickedBall: number
     /** @description participant の PickFinished にだけ含める演出用差分。 */
     CardChanges: {
       openedCellIndices: number[]

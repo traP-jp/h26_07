@@ -258,7 +258,7 @@ function roomConnectionList(roomId: RoomId): MockSocketConnection[] {
 }
 
 function pickedNumberSet(roomState: MockRoom): Set<number> {
-  return new Set(roomState.pickedBalls.map((ball) => ball.number))
+  return new Set(roomState.pickedBalls)
 }
 
 function openCellIndices(card: Card, pickedNumbers: Set<number>): Set<number> {
@@ -548,7 +548,7 @@ function broadcastHideQRCode(roomState: MockRoom): void {
 }
 
 function recomputeCards(roomState: MockRoom): void {
-  const pickedNumbers = new Set(roomState.pickedBalls.map((ball) => ball.number))
+  const pickedNumbers = new Set(roomState.pickedBalls)
   const knownBingoKeys = new Set(
     roomState.bingoRecords.map((record) => `${record.userId}:${record.lineKey}`),
   )
@@ -715,11 +715,7 @@ function finishPick(roomState: MockRoom): ApiError | FinishPickResult {
     return conflict('抽選可能な球がありません。')
   }
 
-  const pickedBall: PickedBall = {
-    pickedBallId: createId(),
-    pickedAt: now(),
-    number: nextNumber,
-  }
+  const pickedBall: PickedBall = nextNumber
 
   roomState.pickedBalls.push(pickedBall)
   recomputeCards(roomState)

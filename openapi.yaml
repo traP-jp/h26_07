@@ -781,21 +781,10 @@ components:
         - createdAt
 
     PickedBall:
-      type: object
-      additionalProperties: false
-      properties:
-        pickedBallId:
-          $ref: "#/components/schemas/UUID"
-        pickedAt:
-          $ref: "#/components/schemas/DateTime"
-        number:
-          type: integer
-          minimum: 1
-          maximum: 75
-      required:
-        - pickedBallId
-        - pickedAt
-        - number
+      type: integer
+      minimum: 1
+      maximum: 75
+      description: 確定済みの通常数字球。1..75。
 
     CardChanges:
       type: object
