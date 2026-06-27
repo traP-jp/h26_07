@@ -201,13 +201,14 @@ function initializedBody(
   connection: MockSocketConnection,
 ): ParticipantInitializedBody | DisplayInitializedBody {
   const room = roomByPathParam(connection.roomId)
+  const pickedBalls = room.state === 'waiting' ? [] : initialPickedBalls
 
   if (connection.mode === 'participant') {
     return {
       state: room.state,
       settings: room.settings,
       pickState: room.pickState,
-      pickedBalls: initialPickedBalls,
+      pickedBalls,
       bingoSummaries: room.bingoSummaries,
       reachSummaries: room.reachSummaries,
       card: mockCard,
@@ -219,7 +220,7 @@ function initializedBody(
     settings: room.settings,
     pickState: room.pickState,
     participantCount: room.participants.length,
-    pickedBalls: initialPickedBalls,
+    pickedBalls,
     qrCodeVisible: room.qrCodeVisible,
     bingoSummaries: room.bingoSummaries,
     reachSummaries: room.reachSummaries,
@@ -407,7 +408,7 @@ export const roomWebSocketHandler = roomSocket.addEventListener(
 
     sendEvent(connection, 'Initialized', initializedBody(connection))
     scheduleDemoChatMessages(roomId)
-    if (mode === 'display') {
+    if (mode === 'display' && roomByPathParam(roomId).state !== 'waiting') {
       scheduleDemoPickEvents(connection)
     }
   },
