@@ -3,7 +3,7 @@ import type { CreateRoomRequest, GameSettings, Room } from '@/api/schema'
 import { http } from '../../http'
 import { readJson } from './core'
 
-const mockRooms: Room[] = [
+export const mockRooms: Room[] = [
   {
     roomId: '00000000-0000-4000-8000-000000000001',
     roomCode: '123456',
@@ -94,7 +94,7 @@ const mockRooms: Room[] = [
     updatedAt: '2026-06-27T12:30:00.000Z',
   },
 ]
-const fallbackRoom = mockRooms[0] as Room
+export const fallbackRoom = mockRooms[0] as Room
 
 function roomFromSettings(settings: GameSettings): Room {
   const createdAt = new Date().toISOString()

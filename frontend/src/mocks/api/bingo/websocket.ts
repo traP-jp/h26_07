@@ -20,6 +20,7 @@ import type {
 import { ws } from 'msw'
 
 import { pathParam, socketConnections, type MockSocketConnection } from './core'
+import { fallbackRoom, mockRooms } from './rooms'
 
 type MockWebSocketEvent<TBody> = {
   type: WebSocketEventType
@@ -28,31 +29,6 @@ type MockWebSocketEvent<TBody> = {
 
 const roomSocket = ws.link('*/api/rooms/:roomId/ws')
 const mockPickedBalls: PickedBall[] = [7, 22, 45]
-const mockRoom: Room = {
-  roomId: '00000000-0000-4000-8000-000000000001',
-  roomCode: '123456',
-  state: 'waiting',
-  pickState: 'idle',
-  qrCodeVisible: true,
-  participants: [
-    {
-      user: { userId: 'mumumu' },
-      joinedAt: '2026-06-27T10:00:00.000Z',
-    },
-    {
-      user: { userId: 'saba' },
-      joinedAt: '2026-06-27T10:01:00.000Z',
-    },
-  ],
-  bingoSummaries: [],
-  settings: {
-    name: 'デモビンゴ',
-    description: 'モック API で動かす待機中のビンゴルームです。',
-    admins: [{ userId: 'mumumu' }],
-  },
-  createdAt: '2026-06-27T10:00:00.000Z',
-  updatedAt: '2026-06-27T10:00:00.000Z',
-}
 const mockCard: Card = {
   cardId: '00000000-0000-4000-8000-000000000201',
   ownerUserId: 'mumumu',
@@ -116,43 +92,53 @@ function broadcastRoom<TBody>(roomId: string, type: WebSocketEventType, body: TB
   }
 }
 
+function roomById(roomId: string): Room {
+  return mockRooms.find((room) => room.roomId === roomId) ?? fallbackRoom
+}
+
 function initializedBody(
   connection: MockSocketConnection,
 ): ParticipantInitializedBody | DisplayInitializedBody {
+  const room = roomById(connection.roomId)
+
   if (connection.mode === 'participant') {
     return {
-      state: mockRoom.state,
-      settings: mockRoom.settings,
-      pickState: mockRoom.pickState,
+      state: room.state,
+      settings: room.settings,
+      pickState: room.pickState,
       pickedBalls: mockPickedBalls,
-      bingoSummaries: mockRoom.bingoSummaries,
+      bingoSummaries: room.bingoSummaries,
       card: mockCard,
     }
   }
 
   return {
-    state: mockRoom.state,
-    settings: mockRoom.settings,
-    pickState: mockRoom.pickState,
-    participantCount: mockRoom.participants.length,
+    state: room.state,
+    settings: room.settings,
+    pickState: room.pickState,
+    participantCount: room.participants.length,
     pickedBalls: mockPickedBalls,
-    qrCodeVisible: mockRoom.qrCodeVisible,
-    bingoSummaries: mockRoom.bingoSummaries,
+    qrCodeVisible: room.qrCodeVisible,
+    bingoSummaries: room.bingoSummaries,
   }
 }
 
 function sendGameStarted(connection: MockSocketConnection): void {
+  const room = roomById(connection.roomId)
+
   if (connection.mode === 'participant') {
     sendEvent<ParticipantGameStartedBody>(connection, 'GameStarted', { card: mockCard })
     return
   }
 
   sendEvent<DisplayGameStartedBody>(connection, 'GameStarted', {
-    participantCount: mockRoom.participants.length,
+    participantCount: room.participants.length,
   })
 }
 
 function sendPickFinished(connection: MockSocketConnection): void {
+  const room = roomById(connection.roomId)
+
   if (connection.mode === 'participant') {
     sendEvent<ParticipantPickFinishedBody>(connection, 'PickFinished', {
       pickedBall: 7,
@@ -164,7 +150,7 @@ function sendPickFinished(connection: MockSocketConnection): void {
         newBingoLines: [],
       },
       pickedBalls: mockPickedBalls,
-      bingoSummaries: mockRoom.bingoSummaries,
+      bingoSummaries: room.bingoSummaries,
       newBingos: [],
       newReaches: [],
     })
@@ -174,8 +160,8 @@ function sendPickFinished(connection: MockSocketConnection): void {
   sendEvent<DisplayPickFinishedBody>(connection, 'PickFinished', {
     pickedBall: 7,
     pickState: 'idle',
-    participantCount: mockRoom.participants.length,
-    bingoSummaries: mockRoom.bingoSummaries,
+    participantCount: room.participants.length,
+    bingoSummaries: room.bingoSummaries,
     newBingos: [],
     newReaches: [],
     pickedBalls: mockPickedBalls,
@@ -183,12 +169,14 @@ function sendPickFinished(connection: MockSocketConnection): void {
 }
 
 function sendGameFinished(connection: MockSocketConnection): void {
+  const room = roomById(connection.roomId)
+
   if (connection.mode === 'participant') {
     sendEvent<ParticipantGameFinishedBody>(connection, 'GameFinished', {
       state: 'finished',
       pickState: 'idle',
       card: mockCard,
-      bingoSummaries: mockRoom.bingoSummaries,
+      bingoSummaries: room.bingoSummaries,
     })
     return
   }
@@ -196,8 +184,8 @@ function sendGameFinished(connection: MockSocketConnection): void {
   sendEvent<DisplayGameFinishedBody>(connection, 'GameFinished', {
     state: 'finished',
     pickState: 'idle',
-    participantCount: mockRoom.participants.length,
-    bingoSummaries: mockRoom.bingoSummaries,
+    participantCount: room.participants.length,
+    bingoSummaries: room.bingoSummaries,
   })
 }
 
