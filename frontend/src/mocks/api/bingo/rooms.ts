@@ -133,6 +133,7 @@ export const mockRooms: Room[] = [
       },
     ],
     bingoSummaries: [],
+    reachSummaries: [],
     settings: {
       name: '少人数ビンゴ',
       description: '参加者はいるが管理者は未参加の待機中ルームです。',
@@ -173,6 +174,14 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'kurao' },
         bingoOrders: [],
+      },
+    ],
+    reachSummaries: [
+      {
+        user: { userId: 'kurosaki' },
+      },
+      {
+        user: { userId: 'kurao' },
       },
     ],
     settings: {
@@ -225,6 +234,14 @@ export const mockRooms: Room[] = [
         bingoOrders: [],
       },
     ],
+    reachSummaries: [
+      {
+        user: { userId: 'rurun' },
+      },
+      {
+        user: { userId: 'kurao' },
+      },
+    ],
     settings: {
       name: '全番号終了ビンゴ',
       description: 'pickState が exhausted の終了済みルームです。',
@@ -241,6 +258,7 @@ export const mockRooms: Room[] = [
     qrCodeVisible: false,
     participants: [],
     bingoSummaries: [],
+    reachSummaries: [],
     settings: {
       name: '空の待機ルーム',
       description: '参加者がまだいない状態の確認用ルームです。',
@@ -273,6 +291,11 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'mumumu' },
         bingoOrders: [1],
+      },
+    ],
+    reachSummaries: [
+      {
+        user: { userId: 'howard127' },
       },
     ],
     settings: {
@@ -333,6 +356,14 @@ export const mockRooms: Room[] = [
         bingoOrders: [2],
       },
     ],
+    reachSummaries: [
+      {
+        user: { userId: 'mumumu' },
+      },
+      {
+        user: { userId: 'howard127' },
+      },
+    ],
     settings: {
       name: '全員参加ビンゴ',
       description: '5人全員が参加している終了済みルームです。',
@@ -354,6 +385,7 @@ export const mockRooms: Room[] = [
       },
     ],
     bingoSummaries: [],
+    reachSummaries: [],
     settings: {
       name: '招待中ビンゴ',
       description: 'QR 表示中で参加者が少ない待機中ルームです。',
