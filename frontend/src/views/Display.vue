@@ -36,9 +36,9 @@ import type { RoomCode, RoomId } from '@/api/schema'
 import type { PickedBall } from '@/api/schema'
 import Iridescence from '@/components/backgrounds/Iridescence.vue'
 import NumberBall from '@/components/layouts/NumberBall.vue'
-import BallStateGrid from '@/components/rooms/BallStateGrid.vue'
-import { getBallPalette } from '@/components/rooms/ballPalette'
-import RoomStatsBar from '@/components/rooms/RoomStatsBar.vue'
+import BallStateGrid from '@/components/display/BallStateGrid.vue'
+import { getBallPalette } from '@/components/display/ballPalette'
+import RoomStatsBar from '@/components/display/RoomStatsBar.vue'
 import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
@@ -203,7 +203,7 @@ onBeforeUnmount(() => {
   width: auto !important;
   height: 90% !important;
   aspect-ratio: 1 / 1;
-  font-size: 12dvh !important;
+  font-size: 14dvh !important;
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
