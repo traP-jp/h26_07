@@ -17,6 +17,7 @@
   "packageManager": "pnpm@11.8.0",
   "dependencies": {
     "@nuxt/ui": "^4.9.0",
+    "@vueuse/core": "^14.3.0",
     "openapi-fetch": "^0.17.0",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.3.1",
