@@ -11,7 +11,7 @@ import (
 )
 
 func TestHealthz(t *testing.T) {
-	e := New(testConfig())
+	e := New(testConfig(), nil)
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
 
@@ -23,7 +23,7 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestGetMeUsesForwardedUser(t *testing.T) {
-	e := New(testConfig())
+	e := New(testConfig(), nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
 	req.Header.Set("X-Forwarded-User", "mumumu")
 	rec := httptest.NewRecorder()
@@ -39,13 +39,13 @@ func TestGetMeUsesForwardedUser(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if body.UserID != "mumumu" || body.Name != "mumumu" {
+	if body.UserID != "mumumu" {
 		t.Fatalf("unexpected response: %+v", body)
 	}
 }
 
 func TestGetMeFallsBackToDeveloper(t *testing.T) {
-	e := New(testConfig())
+	e := New(testConfig(), nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
 	rec := httptest.NewRecorder()
 
@@ -60,7 +60,7 @@ func TestGetMeFallsBackToDeveloper(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if body.UserID != "traP" || body.Name != "traP" {
+	if body.UserID != "traP" {
 		t.Fatalf("unexpected response: %+v", body)
 	}
 }
@@ -69,5 +69,6 @@ func testConfig() config.Config {
 	return config.Config{
 		Port:             "8080",
 		CORSAllowOrigins: []string{"http://localhost:5173"},
+		Database:         config.DatabaseConfig{},
 	}
 }

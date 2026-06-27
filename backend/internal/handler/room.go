@@ -13,10 +13,10 @@ import (
 )
 
 type RoomHandler struct {
-	roomService service.RoomService
+	roomService *service.RoomService
 }
 
-func NewRoomHandler(roomService service.RoomService) *RoomHandler {
+func NewRoomHandler(roomService *service.RoomService) *RoomHandler {
 	return &RoomHandler{
 		roomService: roomService,
 	}
@@ -27,6 +27,13 @@ func convertUserIDsToModel(userIDS []openapi.UserID) []model.UserID {
 		result = append(result, model.UserID(userID))
 	}
 	return result
+}
+
+func convertOptionalUserIDsToModel(userIDs *[]openapi.UserID) []model.UserID {
+	if userIDs == nil {
+		return []model.UserID{}
+	}
+	return convertUserIDsToModel(*userIDs)
 }
 
 func convertUserIDsToOpenAPI(userIDs []model.UserID) []openapi.User {
@@ -41,7 +48,7 @@ func convertRoomSettingsToModel(settings openapi.GameSettingsInput) model.RoomSe
 	return model.RoomSettings{
 		Name:        settings.Name,
 		Description: settings.Description,
-		Admins:      convertUserIDsToModel(*settings.AdminUserIds),
+		Admins:      convertOptionalUserIDsToModel(settings.AdminUserIds),
 	}
 }
 
@@ -118,16 +125,14 @@ func (h *RoomHandler) PostRoom(c *echo.Context) error {
 	if !ok {
 		return c.NoContent(http.StatusUnauthorized)
 	}
-	var settingsInput openapi.GameSettingsInput
-	c.Bind(&settingsInput)
-
-	settings := model.RoomSettings{
-		Name:        settingsInput.Name,
-		Description: settingsInput.Description,
-		Admins:      convertUserIDsToModel(*settingsInput.AdminUserIds),
+	var req openapi.CreateRoomRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{
+			Message: "invalid request body",
+		})
 	}
 
-	room, err := h.roomService.CreateRoom(c.Request().Context(), settings, model.UserID(user.Name))
+	room, err := h.roomService.CreateRoom(c.Request().Context(), convertRoomSettingsToModel(req.Settings), model.UserID(user.Name))
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
@@ -136,5 +141,5 @@ func (h *RoomHandler) PostRoom(c *echo.Context) error {
 			},
 		)
 	}
-	return c.JSON(http.StatusCreated, convertRoom(room))
+	return c.JSON(http.StatusOK, convertRoom(room))
 }
