@@ -117,8 +117,15 @@ function handleBingoComplete() {
 
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
-const { latestEvent, latestPickedBall, pickState, pickedBalls, qrCodeVisible, roomState } =
-  storeToRefs(roomWebSocketStore)
+const {
+  latestEvent,
+  latestPickedBall,
+  pickState,
+  pickedBalls,
+  qrCodeVisible,
+  roomState,
+  latestNewBingos,
+} = storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const displayPageElement = ref<HTMLElement | null>(null)
 const isFullscreen = ref(false)
@@ -225,6 +232,12 @@ watch(latestEvent, (event) => {
   }
   if (event.type === 'GameStarted') {
     playGameStartCutin()
+  }
+})
+
+watch(latestNewBingos, (newValue) => {
+  if (newValue.length >= 1) {
+    playBingoOverlay()
   }
 })
 
