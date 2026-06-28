@@ -11,6 +11,11 @@ const loading = ref(true)
 const errorMessage = ref('')
 const rooms = ref(new Array<Room>())
 
+const joinModalOpen = ref(false)
+const selectedRoom = ref<Room | null>(null)
+const joining = ref(false)
+const joinErrorMessage = ref('')
+
 onMounted(async () => {
   loading.value = true
 
@@ -43,20 +48,64 @@ const waitingRooms = computed(() => {
       !room.participants.some((participant) => participant.user.userId === currentUserStore.userId),
   )
 })
+
+function openJoinModal(room: Room) {
+  selectedRoom.value = room
+  joinErrorMessage.value = ''
+  joinModalOpen.value = true
+}
+
+function closeJoinModal() {
+  joinModalOpen.value = false
+  selectedRoom.value = null
+  joinErrorMessage.value = ''
+}
+
+async function confirmJoinRoom() {
+  if (!selectedRoom.value) return
+
+  const room = selectedRoom.value
+
+  joining.value = true
+  joinErrorMessage.value = ''
+
+  const { error } = await apiClient.POST('/api/rooms/{roomId}/participants', {
+    params: {
+      path: {
+        roomId: room.roomId,
+      },
+    },
+  })
+
+  joining.value = false
+
+  if (error) {
+    joinErrorMessage.value = error.message
+    return
+  }
+
+  joinModalOpen.value = false
+  selectedRoom.value = null
+
+  window.open(`/${room.roomCode}/participant`, '_blank', 'noopener,noreferrer')
+}
 </script>
 
 <template>
   <UContainer class="pt-6">
     <div v-if="loading">読み込み中...</div>
+
     <div v-else-if="errorMessage">
       ルーム情報の取得に失敗しました。 <br />
       {{ errorMessage }}
     </div>
+
     <template v-else>
       <h2 class="text-3xl font-bold mb-4">
         <UIcon name="i-lucide-zap" class="text-yellow-400 inline" />
         あなたが参加しているルーム
       </h2>
+
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
         <template v-for="room in joinedRooms" :key="room.roomCode">
           <Card
@@ -68,27 +117,59 @@ const waitingRooms = computed(() => {
       </div>
 
       <h2 class="text-3xl font-bold mb-4">あなたが管理しているルーム</h2>
+
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
         <template v-for="room in adminRooms" :key="room.roomCode">
           <Card
             :title="room.settings.name"
             :description="room.settings.description"
             :room-code="room.roomCode"
-            isAdmin
+            is-Admin
           ></Card>
         </template>
       </div>
 
       <h2 class="text-3xl font-bold mb-4">参加者を募集しているルーム</h2>
+
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
         <template v-for="room in waitingRooms" :key="room.roomCode">
           <Card
             :title="room.settings.name"
             :description="room.settings.description"
             :room-code="room.roomCode"
+            is-joinable
+            @join="openJoinModal(room)"
           ></Card>
         </template>
       </div>
     </template>
+
+    <UModal v-model:open="joinModalOpen">
+      <template #content>
+        <UCard>
+          <template #header>
+            <h3 class="text-xl font-bold">参加しますか？</h3>
+          </template>
+
+          <div class="space-y-2">
+            <p>「{{ selectedRoom?.settings.name }}」に参加しますか？</p>
+
+            <p v-if="joinErrorMessage" class="text-red-500">
+              {{ joinErrorMessage }}
+            </p>
+          </div>
+
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton color="neutral" variant="soft" :disabled="joining" @click="closeJoinModal">
+                しない
+              </UButton>
+
+              <UButton color="primary" :loading="joining" @click="confirmJoinRoom"> する </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
   </UContainer>
 </template>
