@@ -311,7 +311,7 @@ function addReachSummary(room: Room, user: User): void {
   const alreadyBingo = room.bingoSummaries.some((summary) => summary.user.userId === user.userId)
 
   if (!alreadyReached && !alreadyBingo) {
-    room.reachSummaries.push({ user })
+    room.reachSummaries.push({ user, createdAt: new Date().toISOString() })
   }
 }
 
@@ -328,7 +328,7 @@ function addBingoSummary(room: Room, user: User): number[] {
   }
 
   const bingoOrders = [nextOrder]
-  room.bingoSummaries.push({ user, bingoOrders })
+  room.bingoSummaries.push({ user, bingoOrders, createdAt: new Date().toISOString() })
   return bingoOrders
 }
 

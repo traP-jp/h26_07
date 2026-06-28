@@ -100,11 +100,13 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'rurun' },
         bingoOrders: [1],
+        createdAt: '2026-06-27T11:08:00.000Z',
       },
     ],
     reachSummaries: [
       {
         user: { userId: 'howard127' },
+        createdAt: '2026-06-27T11:06:00.000Z',
       },
     ],
     settings: {
@@ -135,6 +137,7 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'kurao' },
         bingoOrders: [1, 2],
+        createdAt: '2026-06-27T12:20:00.000Z',
       },
     ],
     reachSummaries: [],
@@ -196,22 +199,27 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'kurosaki' },
         bingoOrders: [],
+        createdAt: '2026-06-27T14:07:00.000Z',
       },
       {
         user: { userId: 'mumumu' },
         bingoOrders: [1],
+        createdAt: '2026-06-27T14:10:00.000Z',
       },
       {
         user: { userId: 'kurao' },
         bingoOrders: [],
+        createdAt: '2026-06-27T14:09:00.000Z',
       },
     ],
     reachSummaries: [
       {
         user: { userId: 'kurosaki' },
+        createdAt: '2026-06-27T14:07:00.000Z',
       },
       {
         user: { userId: 'kurao' },
+        createdAt: '2026-06-27T14:09:00.000Z',
       },
     ],
     settings: {
@@ -250,26 +258,32 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'kurosaki' },
         bingoOrders: [3],
+        createdAt: '2026-06-27T15:35:00.000Z',
       },
       {
         user: { userId: 'rurun' },
         bingoOrders: [],
+        createdAt: '2026-06-27T15:20:00.000Z',
       },
       {
         user: { userId: 'howard127' },
         bingoOrders: [1, 2],
+        createdAt: '2026-06-27T15:25:00.000Z',
       },
       {
         user: { userId: 'kurao' },
         bingoOrders: [],
+        createdAt: '2026-06-27T15:23:00.000Z',
       },
     ],
     reachSummaries: [
       {
         user: { userId: 'rurun' },
+        createdAt: '2026-06-27T15:20:00.000Z',
       },
       {
         user: { userId: 'kurao' },
+        createdAt: '2026-06-27T15:23:00.000Z',
       },
     ],
     settings: {
@@ -317,15 +331,18 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'howard127' },
         bingoOrders: [],
+        createdAt: '2026-06-27T17:12:00.000Z',
       },
       {
         user: { userId: 'mumumu' },
         bingoOrders: [1],
+        createdAt: '2026-06-27T17:16:00.000Z',
       },
     ],
     reachSummaries: [
       {
         user: { userId: 'howard127' },
+        createdAt: '2026-06-27T17:12:00.000Z',
       },
     ],
     settings: {
@@ -368,30 +385,37 @@ export const mockRooms: Room[] = [
       {
         user: { userId: 'kurosaki' },
         bingoOrders: [4],
+        createdAt: '2026-06-27T18:35:00.000Z',
       },
       {
         user: { userId: 'mumumu' },
         bingoOrders: [],
+        createdAt: '2026-06-27T18:18:00.000Z',
       },
       {
         user: { userId: 'rurun' },
         bingoOrders: [1, 3],
+        createdAt: '2026-06-27T18:20:00.000Z',
       },
       {
         user: { userId: 'howard127' },
         bingoOrders: [],
+        createdAt: '2026-06-27T18:22:00.000Z',
       },
       {
         user: { userId: 'kurao' },
         bingoOrders: [2],
+        createdAt: '2026-06-27T18:27:00.000Z',
       },
     ],
     reachSummaries: [
       {
         user: { userId: 'mumumu' },
+        createdAt: '2026-06-27T18:18:00.000Z',
       },
       {
         user: { userId: 'howard127' },
+        createdAt: '2026-06-27T18:22:00.000Z',
       },
     ],
     settings: {

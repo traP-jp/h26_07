@@ -387,10 +387,12 @@ export interface components {
         BingoSummary: {
             user: components["schemas"]["User"];
             bingoOrders: number[];
+            createdAt: components["schemas"]["DateTime"];
         };
         /** @description 現在リーチしていて、まだビンゴしていない参加者の概要。 */
         ReachSummary: {
             user: components["schemas"]["User"];
+            createdAt: components["schemas"]["DateTime"];
         };
         /** @description PickFinished の body で使う新規ビンゴ情報。カード詳細、ライン index、cell index は含めない。 */
         BingoUpdate: {

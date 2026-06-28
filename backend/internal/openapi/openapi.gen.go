@@ -511,7 +511,10 @@ type AllPickedBody struct {
 // BingoSummary 現在ビンゴしている参加者の概要。
 type BingoSummary struct {
 	BingoOrders []int `json:"bingoOrders"`
-	User        User  `json:"user"`
+
+	// CreatedAt ISO 8601 datetime string。
+	CreatedAt DateTime `json:"createdAt"`
+	User      User     `json:"user"`
 }
 
 // BingoUpdate PickFinished の body で使う新規ビンゴ情報。カード詳細、ライン index、cell index は含めない。
@@ -938,7 +941,9 @@ type PickedBall = int
 
 // ReachSummary 現在リーチしていて、まだビンゴしていない参加者の概要。
 type ReachSummary struct {
-	User User `json:"user"`
+	// CreatedAt ISO 8601 datetime string。
+	CreatedAt DateTime `json:"createdAt"`
+	User      User     `json:"user"`
 }
 
 // ReachUpdate PickFinished の body で使う初リーチ情報。カード詳細、リーチライン index、cell index は含めない。

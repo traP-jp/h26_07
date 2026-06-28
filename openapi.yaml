@@ -825,9 +825,12 @@ components:
           items:
             type: integer
             minimum: 1
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
       required:
         - user
         - bingoOrders
+        - createdAt
 
     ReachSummary:
       type: object
@@ -836,8 +839,11 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/User"
+        createdAt:
+          $ref: "#/components/schemas/DateTime"
       required:
         - user
+        - createdAt
 
     BingoUpdate:
       type: object

@@ -98,10 +98,12 @@ type BingoRecord struct {
 type BingoSummary struct {
 	UserID      UserID
 	BingoOrders []BingoOrder
+	CreatedAt   time.Time
 }
 
 type ReachSummary struct {
-	UserID UserID
+	UserID    UserID
+	CreatedAt time.Time
 }
 
 type ReachRecord struct {
@@ -347,6 +349,7 @@ func (room *Room) BingoSummaries() []BingoSummary {
 			summaries = append(summaries, BingoSummary{
 				UserID:      record.UserID,
 				BingoOrders: []BingoOrder{},
+				CreatedAt:   record.CreatedAt,
 			})
 		}
 		summaries[index].BingoOrders = append(summaries[index].BingoOrders, record.Order)
@@ -382,7 +385,7 @@ func ReachSummariesFromRecords(reachRecords []ReachRecord, bingoRecords []BingoR
 			continue
 		}
 		addedUserIDs[record.UserID] = struct{}{}
-		summaries = append(summaries, ReachSummary{UserID: record.UserID})
+		summaries = append(summaries, ReachSummary{UserID: record.UserID, CreatedAt: record.CreatedAt})
 	}
 	return summaries
 }

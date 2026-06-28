@@ -80,11 +80,13 @@ func TestGormRoomRepositorySaveFindAndList(t *testing.T) {
 	if len(summaries[0].BingoSummaries) != 1 ||
 		summaries[0].BingoSummaries[0].UserID != "alice" ||
 		len(summaries[0].BingoSummaries[0].BingoOrders) != 1 ||
-		summaries[0].BingoSummaries[0].BingoOrders[0] != 1 {
+		summaries[0].BingoSummaries[0].BingoOrders[0] != 1 ||
+		!summaries[0].BingoSummaries[0].CreatedAt.Equal(createdAt.Add(2*time.Minute)) {
 		t.Fatalf("unexpected room summary bingos: %+v", summaries[0].BingoSummaries)
 	}
 	if len(summaries[0].ReachSummaries) != 1 ||
-		summaries[0].ReachSummaries[0].UserID != "bob" {
+		summaries[0].ReachSummaries[0].UserID != "bob" ||
+		!summaries[0].ReachSummaries[0].CreatedAt.Equal(createdAt.Add(4*time.Minute)) {
 		t.Fatalf("unexpected room summary reaches: %+v", summaries[0].ReachSummaries)
 	}
 

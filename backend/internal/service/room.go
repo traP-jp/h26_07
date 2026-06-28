@@ -192,6 +192,7 @@ func convertBingoSummariesToOpenAPI(bingoSummaries []model.BingoSummary) []opena
 		}
 		result = append(result, openapi.BingoSummary{
 			BingoOrders: bingoOrders,
+			CreatedAt:   bingoSummary.CreatedAt,
 			User:        openapi.User{UserID: openapi.UserID(bingoSummary.UserID)},
 		})
 	}
@@ -202,7 +203,8 @@ func convertReachSummariesToOpenAPI(reachSummaries []model.ReachSummary) []opena
 	result := make([]openapi.ReachSummary, 0, len(reachSummaries))
 	for _, reachSummary := range reachSummaries {
 		result = append(result, openapi.ReachSummary{
-			User: openapi.User{UserID: openapi.UserID(reachSummary.UserID)},
+			CreatedAt: reachSummary.CreatedAt,
+			User:      openapi.User{UserID: openapi.UserID(reachSummary.UserID)},
 		})
 	}
 	return result
@@ -404,20 +406,8 @@ func (s *RoomService) FinishGame(ctx context.Context, roomID model.RoomID, user 
 	if err := s.roomRepository.Save(ctx, room); err != nil {
 		return err
 	}
-	roomReachSummaries := room.ReachSummaries()
-	reachSummaries := make([]openapi.ReachSummary, 0, len(roomReachSummaries))
-	for _, reachSummary := range roomReachSummaries {
-		reachSummaries = append(reachSummaries, openapi.ReachSummary{User: openapi.User{UserID: openapi.UserID(reachSummary.UserID)}})
-	}
-	roomBingoSummaries := room.BingoSummaries()
-	bingoSummaries := make([]openapi.BingoSummary, 0, len(roomBingoSummaries))
-	for _, bingoSummary := range roomBingoSummaries {
-		bingoOrders := make([]int, 0, len(bingoSummary.BingoOrders))
-		for _, bingoOrder := range bingoSummary.BingoOrders {
-			bingoOrders = append(bingoOrders, int(bingoOrder))
-		}
-		bingoSummaries = append(bingoSummaries, openapi.BingoSummary{BingoOrders: bingoOrders, User: openapi.User{UserID: openapi.UserID(bingoSummary.UserID)}})
-	}
+	reachSummaries := convertReachSummariesToOpenAPI(room.ReachSummaries())
+	bingoSummaries := convertBingoSummariesToOpenAPI(room.BingoSummaries())
 	for _, update := range result.ParticipantUpdates {
 		if err := s.events.SendParticipant(ctx, roomID, update.UserID, openapi.ParticipantGameFinishedEvent{
 			Type: openapi.ParticipantGameFinishedEventTypeGameFinished,
