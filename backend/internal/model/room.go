@@ -213,14 +213,7 @@ func (room *Room) CanFinish(userID UserID) bool {
 	return room.State == RoomStatePlaying && room.IsAdmin(userID)
 }
 
-func (room *Room) CanStartPick(userID UserID) bool {
-	return room.State == RoomStatePlaying && room.IsAdmin(userID) && room.PickState == RoomPickStateIdle
-}
-
-func (room *Room) CanCancelPick(userID UserID) bool {
-	return room.State == RoomStatePlaying && room.IsAdmin(userID) && room.PickState == RoomPickStatePicking
-}
-
+// TODO あとで消して別々にチェックして別のエラーを返すようにする
 func (room *Room) CanFinishPick(userID UserID) bool {
 	return room.State == RoomStatePlaying && room.IsAdmin(userID) && room.PickState == RoomPickStatePicking
 }
