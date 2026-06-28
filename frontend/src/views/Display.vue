@@ -1,54 +1,74 @@
+<!--
+playGameStartCutin()
+playBingoOverlay()
+-->
+
 <template>
-  <div ref="displayPageElement" class="display-page">
-    <Iridescence
-      class="display-page__background"
-      :color="[1, 1, 1]"
-      :mouse-react="false"
-      :amplitude="0.1"
-      :speed="0.1"
-    />
-    <div class="display-page__stage">
-      <div class="display-page__content">
-        <div class="display-page__latest-ball" aria-label="直近の抽選番号">
-          <NumberBall
-            class="display-page__latest-number"
-            :ball-color="displayBallColor"
-            :text-color="displayBallTextColor"
-            :text="displayBallText"
-            :size="260"
+  <div class="page">
+    <div ref="displayPageElement" class="display-page">
+      <Iridescence
+        class="display-page__background"
+        :color="[1, 1, 1]"
+        :mouse-react="false"
+        :amplitude="0.1"
+        :speed="0.1"
+      />
+      <div class="display-page__stage">
+        <div class="display-page__content">
+          <div class="display-page__latest-ball" aria-label="直近の抽選番号">
+            <NumberBall
+              class="display-page__latest-number"
+              :ball-color="displayBallColor"
+              :text-color="displayBallTextColor"
+              :text="displayBallText"
+              :size="260"
+            />
+          </div>
+          <div v-if="isGameWaiting" class="display-page__waiting-panel" role="status">
+            <p class="display-page__waiting-title">ゲームはまだ始まっていません</p>
+            <p class="display-page__waiting-text">参加者の準備ができるまでお待ちください</p>
+          </div>
+          <BallStateGrid
+            v-else
+            :picked-balls="pickedBalls"
+            :latest-picked-ball="latestPickedBall"
+          />
+          <RoomStatsBar />
+        </div>
+        <div class="display-page__chat">
+          <div class="display-page__chat-header">Chat</div>
+          <ChatContainer
+            :room-code="props.roomCode"
+            :textarea="false"
+            :connect="false"
+            variant="display"
           />
         </div>
-        <div v-if="isGameWaiting" class="display-page__waiting-panel" role="status">
-          <p class="display-page__waiting-title">ゲームはまだ始まっていません</p>
-          <p class="display-page__waiting-text">参加者の準備ができるまでお待ちください</p>
-        </div>
-        <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
-        <RoomStatsBar />
       </div>
-      <div class="display-page__chat">
-        <div class="display-page__chat-header">Chat</div>
-        <ChatContainer
-          :room-code="props.roomCode"
-          :textarea="false"
-          :connect="false"
-          variant="display"
-        />
-      </div>
+      <UButton
+        class="display-page__fullscreen-button"
+        color="neutral"
+        variant="soft"
+        size="xl"
+        :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-expand'"
+        @click="toggleFullscreen"
+      />
+      <DisplayParticipantQrCode :room-code="props.roomCode" :open="qrCodeVisible ?? false" />
+
+      <GameStartCutin
+        v-if="showCutin"
+        :key="cutinKey"
+        @complete="handleCutinComplete"
+        class="z-1"
+        :bottom-text="bottomText"
+        :top-text="topText"
+      />
     </div>
-    <UButton
-      class="display-page__fullscreen-button"
-      color="neutral"
-      variant="soft"
-      size="xl"
-      :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-expand'"
-      @click="toggleFullscreen"
-    />
-    <DisplayParticipantQrCode :room-code="props.roomCode" :open="qrCodeVisible ?? false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import type { RoomId } from '@/api/schema'
@@ -68,10 +88,39 @@ import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 
+import GameStartCutin from '@/components/GameStartCutin.vue'
+
+const showCutin = ref(false)
+const showBingo = ref(false)
+const cutinKey = ref(0)
+
+const topText = ref('GAME')
+const bottomText = ref('START')
+
+async function playGameStartCutin() {
+  showBingo.value = false
+  showCutin.value = false
+  await nextTick()
+
+  cutinKey.value += 1
+  showCutin.value = true
+}
+
+function handleCutinComplete() {
+  showCutin.value = false
+}
+
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
-const { latestEvent, latestPickedBall, pickState, pickedBalls, qrCodeVisible, roomState } =
-  storeToRefs(roomWebSocketStore)
+const {
+  latestEvent,
+  latestPickedBall,
+  pickState,
+  pickedBalls,
+  qrCodeVisible,
+  roomState,
+  latestNewBingos,
+} = storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const displayPageElement = ref<HTMLElement | null>(null)
 const isFullscreen = ref(false)
@@ -173,10 +222,29 @@ watch(
 
 watch(latestEvent, (event) => {
   if (!event) return
-  if (event.type !== 'PickFinished') return
-
-  cymbal.play()
+  if (event.type === 'PickFinished') {
+    cymbal.play()
+  }
+  if (event.type === 'GameStarted') {
+    playGameStartCutin()
+  }
 })
+
+watch(latestNewBingos, (newBingos) => {
+  if (newBingos.length < 1) {
+    return
+  }
+
+  topText.value = String(newBingos.length) + ' players'
+  bottomText.value = 'BINGO!!!'
+  playGameStartCutin()
+})
+
+// watch(latestNewBingos, (newValue) => {
+//   if (newValue.length >= 1) {
+//     playBingoOverlay()
+//   }
+// })
 
 onMounted(async () => {
   document.addEventListener('fullscreenchange', syncFullscreenState)
