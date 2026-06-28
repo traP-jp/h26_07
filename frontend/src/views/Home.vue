@@ -13,8 +13,6 @@ const rooms = ref(new Array<Room>())
 
 const joinModalOpen = ref(false)
 const selectedRoom = ref<Room | null>(null)
-const joining = ref(false)
-const joinErrorMessage = ref('')
 
 onMounted(async () => {
   loading.value = true
@@ -51,38 +49,18 @@ const waitingRooms = computed(() => {
 
 function openJoinModal(room: Room) {
   selectedRoom.value = room
-  joinErrorMessage.value = ''
   joinModalOpen.value = true
 }
 
 function closeJoinModal() {
   joinModalOpen.value = false
   selectedRoom.value = null
-  joinErrorMessage.value = ''
 }
 
-async function confirmJoinRoom() {
+function confirmJoinRoom() {
   if (!selectedRoom.value) return
 
   const room = selectedRoom.value
-
-  joining.value = true
-  joinErrorMessage.value = ''
-
-  const { error } = await apiClient.POST('/api/rooms/{roomId}/participants', {
-    params: {
-      path: {
-        roomId: room.roomId,
-      },
-    },
-  })
-
-  joining.value = false
-
-  if (error) {
-    joinErrorMessage.value = error.message
-    return
-  }
 
   joinModalOpen.value = false
   selectedRoom.value = null
@@ -153,19 +131,13 @@ async function confirmJoinRoom() {
 
           <div class="space-y-2">
             <p>「{{ selectedRoom?.settings.name }}」に参加しますか？</p>
-
-            <p v-if="joinErrorMessage" class="text-red-500">
-              {{ joinErrorMessage }}
-            </p>
           </div>
 
           <template #footer>
             <div class="flex justify-end gap-2">
-              <UButton color="neutral" variant="soft" :disabled="joining" @click="closeJoinModal">
-                しない
-              </UButton>
+              <UButton color="neutral" variant="soft" @click="closeJoinModal"> しない </UButton>
 
-              <UButton color="primary" :loading="joining" @click="confirmJoinRoom"> する </UButton>
+              <UButton color="primary" @click="confirmJoinRoom"> する </UButton>
             </div>
           </template>
         </UCard>

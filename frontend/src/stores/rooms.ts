@@ -41,6 +41,22 @@ export const useRoomsStore = defineStore('rooms', () => {
     return room?.roomId ?? null
   }
 
+  async function joinRoom(roomId: RoomId): Promise<void> {
+    const { error } = await apiClient.POST('/api/rooms/{roomId}/participants', {
+      params: {
+        path: {
+          roomId,
+        },
+      },
+    })
+
+    if (error !== undefined) {
+      throw new Error('Failed to join room')
+    }
+
+    await fetchRooms()
+  }
+
   return {
     rooms,
     roomsByCode,
@@ -48,5 +64,6 @@ export const useRoomsStore = defineStore('rooms', () => {
     init,
     getRoomByCode,
     getRoomIdByCode,
+    joinRoom,
   }
 })
