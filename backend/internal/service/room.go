@@ -401,8 +401,9 @@ func (s *RoomService) FinishGame(ctx context.Context, roomID model.RoomID, user 
 	if err != nil {
 		return err
 	}
-	room.State = model.RoomStateFinished
-	s.roomRepository.Save(ctx, room)
+	if err := s.roomRepository.Save(ctx, room); err != nil {
+		return err
+	}
 	reachSummaries := make([]openapi.ReachSummary, 0, len(room.ReachSummaries()))
 	for _, reachSumamry := range room.ReachSummaries() {
 		reachSummaries = append(reachSummaries, openapi.ReachSummary{User: openapi.User{UserID: openapi.UserID(reachSumamry.UserID)}})
