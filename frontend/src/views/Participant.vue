@@ -6,6 +6,7 @@ import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 import { useRoute } from 'vue-router'
 import type { RoomCode, Card, RoomId } from '@/api/schema'
 import { useRoomsStore } from '@/stores/rooms'
+import { useCurrentUserStore } from '@/stores/currentUser'
 import { storeToRefs } from 'pinia'
 import { Fireworks } from 'fireworks-js'
 
@@ -14,6 +15,7 @@ const roomCode = route.params.roomCode as RoomCode | undefined
 const roomId = ref<RoomId | null>(null)
 const roomWebSocketStore = useRoomWebSocketStore()
 const roomsStore = useRoomsStore()
+const currentUserStore = useCurrentUserStore()
 const { roomsByCode } = storeToRefs(roomsStore)
 const { mode, roomId: connectedRoomId, roomState } = storeToRefs(roomWebSocketStore)
 
@@ -24,17 +26,32 @@ const fireworksOverlay = ref<HTMLElement | null>(null)
 const isGameWaiting = computed(() => roomState.value === 'waiting')
 let fireworks: Fireworks | undefined
 let fireworksStopTimer: ReturnType<typeof setTimeout> | undefined
+const errorMessage = ref('')
 
 onMounted(async () => {
   if (!roomCode) return
 
   await roomsStore.init()
-  roomId.value = roomsByCode.value.get(roomCode)?.roomId ?? null
+  const room = roomsByCode.value.get(roomCode)
+  roomId.value = room?.roomId ?? null
 
   if (!roomId.value) return
 
   if (connectedRoomId.value === roomId.value && mode.value === 'participant') {
     return
+  }
+
+  const isParticipant =
+    room?.participants.some((participant) => participant.user.userId === currentUserStore.userId) ??
+    false
+
+  if (!isParticipant) {
+    if (room?.state !== 'waiting') {
+      errorMessage.value = 'このルームには参加できません。'
+      return
+    }
+
+    await roomsStore.joinRoom(roomId.value)
   }
 
   roomWebSocketStore.connect({ roomId: roomId.value, mode: 'participant' })
