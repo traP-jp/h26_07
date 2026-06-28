@@ -4,7 +4,7 @@ import NumberBall from '@/components/layouts/NumberBall.vue'
 import { computed } from 'vue'
 const props = defineProps<{
   cell: CardCell
-  size: number
+  size?: number
 }>()
 
 const ballColor = computed(() => {
@@ -36,6 +36,7 @@ const textColor = computed(() => {
 
 <template>
   <NumberBall
+    :key="props.cell.cellState"
     :ball-color="ballColor"
     :text-color="textColor"
     :text="props.cell.displayText"
