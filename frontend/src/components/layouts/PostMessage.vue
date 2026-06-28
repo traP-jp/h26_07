@@ -53,6 +53,7 @@ const post = async () => {
 <style scoped>
 .wrapper {
   display: flex;
+  height: 30px;
   gap: 6px;
   align-items: center;
   padding-left: 8px;
