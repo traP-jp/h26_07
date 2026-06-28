@@ -7,22 +7,33 @@
       :amplitude="0.1"
       :speed="0.1"
     />
-    <div class="display-page__content">
-      <div class="display-page__latest-ball" aria-label="直近の抽選番号">
-        <NumberBall
-          class="display-page__latest-number"
-          :ball-color="displayBallColor"
-          :text-color="displayBallTextColor"
-          :text="displayBallText"
-          :size="260"
+    <div class="display-page__stage">
+      <div class="display-page__content">
+        <div class="display-page__latest-ball" aria-label="直近の抽選番号">
+          <NumberBall
+            class="display-page__latest-number"
+            :ball-color="displayBallColor"
+            :text-color="displayBallTextColor"
+            :text="displayBallText"
+            :size="260"
+          />
+        </div>
+        <div v-if="isGameWaiting" class="display-page__waiting-panel" role="status">
+          <p class="display-page__waiting-title">ゲームはまだ始まっていません</p>
+          <p class="display-page__waiting-text">参加者の準備ができるまでお待ちください</p>
+        </div>
+        <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
+        <RoomStatsBar />
+      </div>
+      <div class="display-page__chat" aria-label="チャット">
+        <div class="display-page__chat-header">Chat</div>
+        <ChatContainer
+          :room-code="props.roomCode"
+          :textarea="false"
+          :connect="false"
+          variant="display"
         />
       </div>
-      <div v-if="isGameWaiting" class="display-page__waiting-panel" role="status">
-        <p class="display-page__waiting-title">ゲームはまだ始まっていません</p>
-        <p class="display-page__waiting-text">参加者の準備ができるまでお待ちください</p>
-      </div>
-      <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
-      <RoomStatsBar />
     </div>
     <DisplayParticipantQrCode :room-code="props.roomCode" :open="qrCodeVisible ?? false" />
   </div>
@@ -40,22 +51,19 @@ import BallStateGrid from '@/components/display/BallStateGrid.vue'
 import { getBallPalette } from '@/components/display/ballPalette'
 import DisplayParticipantQrCode from '@/components/display/DisplayParticipantQrCode.vue'
 import RoomStatsBar from '@/components/display/RoomStatsBar.vue'
+import ChatContainer from '@/components/layouts/ChatContainer.vue'
+import {
+  DEFAULT_NUMBER_BALL_FAVICON,
+  updateNumberBallFavicon,
+} from '@/composables/useNumberBallFavicon'
 import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
-const {
-  latestEvent,
-  latestPickedBall,
-  mode,
-  pickState,
-  pickedBalls,
-  qrCodeVisible,
-  roomId: connectedRoomId,
-  roomState,
-} = storeToRefs(roomWebSocketStore)
+const { latestEvent, latestPickedBall, pickState, pickedBalls, qrCodeVisible, roomState } =
+  storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const roomId = ref<RoomId | null>(null)
 const rollingPickedBall = ref<PickedBall | null>(null)
@@ -124,6 +132,22 @@ watch(
   { immediate: true },
 )
 
+watch(
+  latestPickedBall,
+  (pickedBall) => {
+    if (pickedBall == null) {
+      return
+    }
+
+    updateNumberBallFavicon({
+      ballColor: getBallPalette(pickedBall).picked,
+      text: String(pickedBall),
+      textColor: '#ffffff',
+    })
+  },
+  { immediate: true },
+)
+
 watch(latestEvent, (event) => {
   if (!event) return
   if (event.type !== 'PickFinished') return
@@ -139,7 +163,7 @@ onMounted(async () => {
 
   if (!roomId.value) return
 
-  if (connectedRoomId.value === roomId.value && mode.value === 'display') {
+  if (roomWebSocketStore.isActiveConnection({ roomId: roomId.value, mode: 'display' })) {
     return
   }
 
@@ -148,8 +172,12 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopRollingPickedBall()
+  updateNumberBallFavicon(DEFAULT_NUMBER_BALL_FAVICON)
 
-  if (roomId.value && connectedRoomId.value === roomId.value) {
+  if (
+    roomId.value &&
+    roomWebSocketStore.isActiveConnection({ roomId: roomId.value, mode: 'display' })
+  ) {
     roomWebSocketStore.disconnect()
   }
 })
@@ -171,26 +199,39 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.display-page__stage {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 24vw, 390px);
+  gap: 20px;
+  height: 100vh;
+  padding: 2%;
+  overflow: hidden;
+}
+
+.display-page__stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgb(255 255 255 / 0.26);
+  backdrop-filter: blur(1px) saturate(1.15);
+  content: '';
+}
+
 .display-page__content {
   position: relative;
   z-index: 1;
   display: flex;
-  height: 100vh;
+  min-width: 0;
+  min-height: 0;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   overflow: hidden;
-  padding: 3% 3% 2%;
+  padding: 1% 1% 0;
   gap: 6%;
-}
-
-.display-page__content::before {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: rgb(255 255 255 / 0.26);
-  backdrop-filter: blur(1px) saturate(1.15);
-  content: '';
 }
 
 .display-page__latest-ball {
@@ -198,17 +239,44 @@ onBeforeUnmount(() => {
   height: 34%;
   display: grid;
   place-items: center;
+  container-type: size;
 }
 
 .display-page__latest-number {
-  width: auto !important;
-  height: 90% !important;
+  width: min(90cqw, 90cqh) !important;
+  height: auto !important;
   opacity: 0.8;
   aspect-ratio: 1 / 1;
-  font-size: 14dvh !important;
+  font-size: min(14dvh, 38cqw) !important;
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.display-page__chat {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.46);
+  box-shadow: 0 18px 45px rgb(20 55 110 / 0.16);
+  backdrop-filter: blur(14px) saturate(1.25);
+}
+
+.display-page__chat-header {
+  flex: 0 0 auto;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.48);
+  color: #1f4f8f;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .display-page__waiting-panel {
@@ -243,21 +311,5 @@ onBeforeUnmount(() => {
   font-weight: 700;
   line-height: 1.4;
   color: #43678f;
-}
-
-@media (max-width: 520px) {
-  .display-page__waiting-panel {
-    min-height: 132px;
-    padding: 18px;
-    border-radius: 14px;
-  }
-
-  .display-page__waiting-title {
-    font-size: 22px;
-  }
-
-  .display-page__waiting-text {
-    font-size: 14px;
-  }
 }
 </style>

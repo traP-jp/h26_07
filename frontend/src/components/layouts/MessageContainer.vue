@@ -18,7 +18,7 @@ defineProps<{
 <style scoped>
 .message {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   padding-left: 8px;
   padding-top: 8px;
@@ -48,7 +48,7 @@ defineProps<{
   padding: 10px 14px;
   background: #424242;
   border: 1px solid rgb(12, 54, 203);
-  border-radius: 14px;
+  border-radius: 0 14px 14px 14px;
   color: #cfcfcf;
   line-height: 1.6;
   white-space: pre-wrap;

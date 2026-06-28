@@ -213,14 +213,7 @@ func (room *Room) CanFinish(userID UserID) bool {
 	return room.State == RoomStatePlaying && room.IsAdmin(userID)
 }
 
-func (room *Room) CanStartPick(userID UserID) bool {
-	return room.State == RoomStatePlaying && room.IsAdmin(userID) && room.PickState == RoomPickStateIdle
-}
-
-func (room *Room) CanCancelPick(userID UserID) bool {
-	return room.State == RoomStatePlaying && room.IsAdmin(userID) && room.PickState == RoomPickStatePicking
-}
-
+// TODO あとで消して別々にチェックして別のエラーを返すようにする
 func (room *Room) CanFinishPick(userID UserID) bool {
 	return room.State == RoomStatePlaying && room.IsAdmin(userID) && room.PickState == RoomPickStatePicking
 }
@@ -489,7 +482,10 @@ func (room *Room) FinishGame(actor UserID, now time.Time) (GameFinishedResult, e
 }
 
 func (room *Room) StartPick(actor UserID, now time.Time) error {
-	if !room.CanStartPick(actor) {
+	if !room.IsAdmin(actor) {
+		return ErrRoomForbidden
+	}
+	if room.State != RoomStatePlaying || room.PickState != RoomPickStateIdle {
 		return ErrRoomPickNotStartable
 	}
 	if !room.HasDrawableBalls() {
@@ -503,7 +499,10 @@ func (room *Room) StartPick(actor UserID, now time.Time) error {
 }
 
 func (room *Room) CancelPick(actor UserID, now time.Time) error {
-	if !room.CanCancelPick(actor) {
+	if !room.IsAdmin(actor) {
+		return ErrRoomForbidden
+	}
+	if room.State != RoomStatePlaying || room.PickState != RoomPickStatePicking {
 		return ErrRoomPickNotCancelable
 	}
 	room.PickState = RoomPickStateIdle
