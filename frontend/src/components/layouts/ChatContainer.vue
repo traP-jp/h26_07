@@ -21,6 +21,7 @@ const room = withDefaults(
 
 const messages = ref<Message[]>([])
 const chatContainer = ref<HTMLElement | null>(null)
+const activeRoomId = ref<Uuid | null>(null)
 
 const scrollToBottom = async () => {
   await nextTick()
@@ -69,6 +70,7 @@ const notificationType = (message: Message) => {
 onMounted(async () => {
   const roomId = await roomsStore.getRoomIdByCode(room.roomCode)
   if (!roomId) return
+  activeRoomId.value = roomId
 
   await loadMessages(roomId)
 
@@ -147,8 +149,8 @@ watch(
     </div>
   </div>
 
-  <div v-if="room.textarea" style="height: 30px">
-    <PostMessage :room-code="room.roomCode"></PostMessage>
+  <div v-if="room.textarea && activeRoomId" style="height: 30px">
+    <PostMessage :room-id="activeRoomId"></PostMessage>
   </div>
 </template>
 
