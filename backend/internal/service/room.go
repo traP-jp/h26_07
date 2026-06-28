@@ -392,6 +392,62 @@ func (s *RoomService) StartGame(ctx context.Context, roomID model.RoomID, user m
 	return nil
 }
 
+func (s *RoomService) FinishGame(ctx context.Context, roomID model.RoomID, user model.UserID) error {
+	room, err := s.roomRepository.FindByID(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	result, err := room.FinishGame(user, time.Now())
+	if err != nil {
+		return err
+	}
+	if err := s.roomRepository.Save(ctx, room); err != nil {
+		return err
+	}
+	roomReachSummaries := room.ReachSummaries()
+	reachSummaries := make([]openapi.ReachSummary, 0, len(roomReachSummaries))
+	for _, reachSummary := range roomReachSummaries {
+		reachSummaries = append(reachSummaries, openapi.ReachSummary{User: openapi.User{UserID: openapi.UserID(reachSummary.UserID)}})
+	}
+	roomBingoSummaries := room.BingoSummaries()
+	bingoSummaries := make([]openapi.BingoSummary, 0, len(roomBingoSummaries))
+	for _, bingoSummary := range roomBingoSummaries {
+		bingoOrders := make([]int, 0, len(bingoSummary.BingoOrders))
+		for _, bingoOrder := range bingoSummary.BingoOrders {
+			bingoOrders = append(bingoOrders, int(bingoOrder))
+		}
+		bingoSummaries = append(bingoSummaries, openapi.BingoSummary{BingoOrders: bingoOrders, User: openapi.User{UserID: openapi.UserID(bingoSummary.UserID)}})
+	}
+	for _, update := range result.ParticipantUpdates {
+		if err := s.events.SendParticipant(ctx, roomID, update.UserID, openapi.ParticipantGameFinishedEvent{
+			Type: openapi.ParticipantGameFinishedEventTypeGameFinished,
+			Body: openapi.ParticipantGameFinishedBody{
+				BingoSummaries: bingoSummaries,
+				Card:           utils.ConvertCardToOpenAPI(room, update.Card),
+				PickState:      openapi.ParticipantGameFinishedBodyPickState(room.PickState),
+				ReachSummaries: reachSummaries,
+				State:          openapi.ParticipantGameFinishedBodyState(room.State),
+			},
+		}); err != nil {
+			return err
+		}
+	}
+	err = s.events.SendRoom(ctx, roomID, openapi.DisplayGameFinishedEvent{
+		Type: openapi.DisplayGameFinishedEventTypeGameFinished,
+		Body: openapi.DisplayGameFinishedBody{
+			ParticipantCount: len(room.Participants),
+			BingoSummaries:   bingoSummaries,
+			PickState:        openapi.DisplayGameFinishedBodyPickState(room.PickState),
+			ReachSummaries:   reachSummaries,
+			State:            openapi.DisplayGameFinishedBodyState(room.State),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RoomService) ShowQRCode(ctx context.Context, roomID model.RoomID, user model.UserID) error {
 	room, err := s.roomRepository.FindByID(ctx, roomID)
 	if err != nil {
