@@ -220,15 +220,25 @@ func (s *RoomService) StartGame(ctx context.Context, roomID model.RoomID, user m
 	if err != nil {
 		return err
 	}
-	for _, cardOpenapi := range result.ParticipantCards {
-		err = s.events.SendRoom(ctx, roomID, openapi.ParticipantGameStartedEvent{
+	if err := s.roomRepository.Save(ctx, room); err != nil {
+		return err
+	}
+	if err := s.events.SendRoom(ctx, roomID, openapi.DisplayGameStartedEvent{
+		Type: openapi.DisplayGameStartedEventTypeGameStarted,
+		Body: openapi.DisplayGameStartedBody{ParticipantCount: len(room.Participants)},
+	}); err != nil {
+		return err
+	}
+	for _, update := range result.ParticipantCards {
+		if err := s.events.SendParticipant(ctx, roomID, update.UserID, openapi.ParticipantGameStartedEvent{
 			Type: openapi.ParticipantGameStartedEventTypeGameStarted,
 			Body: openapi.ParticipantGameStartedBody{
-				Card: utils.ConvertCardToOpenAPI(room, cardOpenapi.Card),
+				Card: utils.ConvertCardToOpenAPI(room, update.Card),
 			},
-		})
+		}); err != nil {
+			return err
+		}
 	}
-	s.roomRepository.Save(ctx, room)
 	return nil
 }
 
