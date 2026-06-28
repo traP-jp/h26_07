@@ -43,11 +43,11 @@ watch(
       if (newValue.length >= 2) {
         addSpecialMessage(
           'newBingos',
-          `${newValue[0]?.user} と他 ${newValue.length - 1} 人がビンゴしました！`,
+          `${newValue[0]?.user.userId} と他 ${newValue.length - 1} 人がビンゴしました！`,
           'ima',
         )
       } else {
-        addSpecialMessage('newBingos', `${newValue[0]?.user} がビンゴしました！`, 'ima')
+        addSpecialMessage('newBingos', `${newValue[0]?.user.userId} がビンゴしました！`, 'ima')
       }
     }
   },
@@ -59,11 +59,11 @@ watch(
       if (newValue.length >= 2) {
         addSpecialMessage(
           'newReaches',
-          `${newValue[0]?.user} と他 ${newValue.length - 1} 人がリーチしました！`,
+          `${newValue[0]?.user.userId} と他 ${newValue.length - 1} 人がリーチしました！`,
           'ima',
         )
       } else {
-        addSpecialMessage('newReaches', `${newValue[0]?.user} がリーチしました！`, 'ima')
+        addSpecialMessage('newReaches', `${newValue[0]?.user.userId} がリーチしました！`, 'ima')
       }
     }
   },
