@@ -23,6 +23,8 @@ const post = async () => {
     })
     if (response.error) {
       throw new Error(`HTTP Error: ${response.error}`)
+    } else {
+      newMessage.value = ''
     }
   } catch (error) {
     console.error('Error', error)

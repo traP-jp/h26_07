@@ -19,7 +19,7 @@ const addSpecialMessage = (id: Uuid, content: string, createdAt: DateTime) => {
 }
 
 const store = useRoomWebSocketStore()
-
+store.connect({ roomId: room.roomCode, mode: room.textarea ? 'participant' : 'display' })
 watch(
   () => store.latestMessage,
   (newValue) => {
@@ -83,7 +83,7 @@ watch(
 
 <style>
 #chatContainer {
-  min-height: calc(100% - 150px);
+  min-height: calc(100% - 50px);
   overflow: scroll;
   scrollbar-width: none;
 }
