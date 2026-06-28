@@ -53,6 +53,7 @@ const post = async () => {
   padding-left: 8px;
   padding-top: 8px;
   padding-right: 8px;
+  border-top: 2px solid #cfcfcf;
 }
 .newMessage {
   height: 20px;
