@@ -40,6 +40,10 @@ import BallStateGrid from '@/components/display/BallStateGrid.vue'
 import { getBallPalette } from '@/components/display/ballPalette'
 import DisplayParticipantQrCode from '@/components/display/DisplayParticipantQrCode.vue'
 import RoomStatsBar from '@/components/display/RoomStatsBar.vue'
+import {
+  DEFAULT_NUMBER_BALL_FAVICON,
+  updateNumberBallFavicon,
+} from '@/composables/useNumberBallFavicon'
 import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
@@ -124,6 +128,22 @@ watch(
   { immediate: true },
 )
 
+watch(
+  latestPickedBall,
+  (pickedBall) => {
+    if (pickedBall == null) {
+      return
+    }
+
+    updateNumberBallFavicon({
+      ballColor: getBallPalette(pickedBall).picked,
+      text: String(pickedBall),
+      textColor: '#ffffff',
+    })
+  },
+  { immediate: true },
+)
+
 watch(latestEvent, (event) => {
   if (!event) return
   if (event.type !== 'PickFinished') return
@@ -148,6 +168,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopRollingPickedBall()
+  updateNumberBallFavicon(DEFAULT_NUMBER_BALL_FAVICON)
 
   if (roomId.value && connectedRoomId.value === roomId.value) {
     roomWebSocketStore.disconnect()
