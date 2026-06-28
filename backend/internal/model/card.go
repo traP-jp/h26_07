@@ -42,7 +42,7 @@ func NewCard(cardID CardID, cardNumber CardNumber, owner UserID, numbers [24]Bal
 			fmt.Println(!number.Valid(), !numberInColumn(index, number))
 			return Card{}, ErrInvalidCard
 		}
-		column := int(index) % 5
+		column := int(index) / 5
 		if _, ok := seenByColumn[column][number]; ok {
 			return Card{}, ErrInvalidCard
 		}
