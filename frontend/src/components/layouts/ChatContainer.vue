@@ -110,12 +110,18 @@ watch(
 </script>
 
 <template>
-  <div ref="chatContainer" id="chatContainer">
-    <div v-for="message in messages" :key="message.messageId">
-      <MessageContainer
-        :user-id="message.author.userId"
-        :content="message.content"
-      ></MessageContainer>
+  <div
+    ref="chatContainer"
+    id="chatContainer"
+    :class="{ 'chat-container--display': room.variant === 'display' }"
+  >
+    <div class="chat-container__messages">
+      <div v-for="message in messages" :key="message.messageId">
+        <MessageContainer
+          :user-id="message.author.userId"
+          :content="message.content"
+        ></MessageContainer>
+      </div>
     </div>
   </div>
   <div v-if="room.textarea" style="height: 30px">
@@ -130,24 +136,32 @@ watch(
   scrollbar-width: none;
 }
 
-.chat-container--display {
+.chat-container__messages {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+#chatContainer.chat-container--display {
   flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   padding: 8px 0 14px;
 }
 
-.chat-container--display :deep(.message) {
+.chat-container--display .message {
   padding-right: 12px;
   padding-left: 12px;
 }
 
-.chat-container--display :deep(.nakami) {
+.chat-container--display .nakami {
   background: rgb(255 255 255 / 0.86);
   border-color: rgb(56 114 177 / 0.28);
   color: #24364d;
 }
 
-.chat-container--display :deep(.nakami.special) {
+.chat-container--display .nakami.special {
   background: #fff2a8;
   color: #37506f;
   font-size: 18px;
