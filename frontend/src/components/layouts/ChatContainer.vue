@@ -85,7 +85,7 @@ watch(
           `${newValue[0]?.user.userId} と他 ${newValue.length - 1} 人がビンゴしました！`,
           'ima',
         )
-      } else {
+      } else if (newValue.length == 1) {
         addSpecialMessage('newBingos', `${newValue[0]?.user.userId} がビンゴしました！`, 'ima')
       }
     }
@@ -101,7 +101,7 @@ watch(
           `${newValue[0]?.user.userId} と他 ${newValue.length - 1} 人がリーチしました！`,
           'ima',
         )
-      } else {
+      } else if (newValue.length == 1) {
         addSpecialMessage('newReaches', `${newValue[0]?.user.userId} がリーチしました！`, 'ima')
       }
     }
