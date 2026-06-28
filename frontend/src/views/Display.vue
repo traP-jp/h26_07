@@ -255,7 +255,6 @@ onMounted(async () => {
   }
 
   roomWebSocketStore.connect({ roomId: roomId.value, mode: 'display' })
-  playGameStartCutin()
 })
 
 onBeforeUnmount(() => {
