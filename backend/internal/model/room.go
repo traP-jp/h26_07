@@ -491,7 +491,10 @@ func (room *Room) FinishGame(actor UserID, now time.Time) (GameFinishedResult, e
 }
 
 func (room *Room) StartPick(actor UserID, now time.Time) error {
-	if !room.CanStartPick(actor) {
+	if !room.IsAdmin(actor) {
+		return ErrRoomForbidden
+	}
+	if room.State != RoomStatePlaying || room.PickState != RoomPickStateIdle {
 		return ErrRoomPickNotStartable
 	}
 	if !room.HasDrawableBalls() {
@@ -505,7 +508,10 @@ func (room *Room) StartPick(actor UserID, now time.Time) error {
 }
 
 func (room *Room) CancelPick(actor UserID, now time.Time) error {
-	if !room.CanCancelPick(actor) {
+	if !room.IsAdmin(actor) {
+		return ErrRoomForbidden
+	}
+	if room.State != RoomStatePlaying || room.PickState != RoomPickStatePicking {
 		return ErrRoomPickNotCancelable
 	}
 	room.PickState = RoomPickStateIdle
