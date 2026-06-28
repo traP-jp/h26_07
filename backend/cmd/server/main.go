@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/traP-jp/h26_07/backend/internal/config"
+	"github.com/traP-jp/h26_07/backend/internal/dbmodel"
 	"github.com/traP-jp/h26_07/backend/internal/server"
 )
 
@@ -35,6 +36,9 @@ func main() {
 	defer sqlDB.Close()
 	if err := sqlDB.Ping(); err != nil {
 		log.Fatalf("failed to connect database: %v", err)
+	}
+	if err := dbmodel.AutoMigrate(db); err != nil {
+		log.Fatalf("failed to auto migrate database: %v", err)
 	}
 
 	e := server.New(cfg, db)
