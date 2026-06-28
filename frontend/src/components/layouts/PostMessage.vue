@@ -1,17 +1,25 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { apiClient } from '@/api/apiClient'
-const room = defineProps<{ roomId: string }>()
+const room = withDefaults(
+  defineProps<{
+    roomId: string
+    variant?: 'default' | 'light'
+  }>(),
+  {
+    variant: 'default',
+  },
+)
+
 const newMessage = ref('')
 type RequestBody = {
   content: string
 }
 const post = async () => {
+  if (newMessage.value.length == 0) return
+
   const data: RequestBody = {
     content: newMessage.value,
-  }
-  if (newMessage.value.length == 0) {
-    throw new Error('Error 400 : Message Invalid')
   }
   if (newMessage.value.length > 500) {
     throw new Error('Error 400 : Message Invalid')
@@ -33,13 +41,14 @@ const post = async () => {
 </script>
 
 <template>
-  <div class="wrapper">
+  <div class="wrapper" :class="{ 'wrapper--light': room.variant === 'light' }">
     <div class="newMessage">
       <input
         id="newMessage"
         v-model="newMessage"
         type="text"
         placeholder="1 文字以上 500 文字以下で入力"
+        @keydown.enter.prevent="post()"
       />
     </div>
     <div class="button" @click="post()">
@@ -53,27 +62,34 @@ const post = async () => {
 <style scoped>
 .wrapper {
   display: flex;
-  height: 30px;
+  box-sizing: border-box;
+  height: 48px;
+  flex: 0 0 48px;
   gap: 6px;
   align-items: center;
-  padding-left: 8px;
-  padding-top: 8px;
-  padding-right: 8px;
+  padding: 8px;
   border-top: 2px solid #cfcfcf;
 }
 .newMessage {
-  height: 20px;
-  width: 80%;
+  height: 32px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .button {
-  width: 20px;
-  height: 20px;
+  display: flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 path {
   fill: rgb(12, 185, 80);
 }
 #newMessage {
-  height: 30px;
+  box-sizing: border-box;
+  height: 32px;
   color: #cfcfcf;
   width: 100%;
   padding: 8px 10px;
@@ -85,5 +101,20 @@ path {
 }
 #newMessage:focus {
   outline: 1px solid rgb(12, 185, 80);
+}
+
+.wrapper--light {
+  border-top-color: rgb(35 63 105 / 0.1);
+  background: #ffffff;
+}
+
+.wrapper--light #newMessage {
+  border: 1px solid rgb(35 63 105 / 0.16);
+  background-color: #f8fafc;
+  color: #1f3556;
+}
+
+.wrapper--light #newMessage::placeholder {
+  color: #8a9ab0;
 }
 </style>

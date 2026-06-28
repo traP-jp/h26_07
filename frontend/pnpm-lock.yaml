@@ -16,6 +16,9 @@ importers:
       '@vueuse/integrations':
         specifier: ^14.3.0
         version: 14.3.0(change-case@5.4.4)(fuse.js@7.4.2)(qrcode@1.5.4)(vue@3.5.38(typescript@6.0.3))
+      fireworks-js:
+        specifier: ^2.10.8
+        version: 2.10.8
       ogl:
         specifier: ^1.0.11
         version: 1.0.11
@@ -3129,6 +3132,12 @@ packages:
         integrity: sha512-78/PXT1wlLLDgTzDs7sjq9hzz0vXD+zn+7wypEe4fXQxCmdmqfGsEPQxmiCSQI3ajFV91bVSsvNtrJRiW6nGng==,
       }
     engines: { node: '>=10' }
+
+  fireworks-js@2.10.8:
+    resolution:
+      {
+        integrity: sha512-UZNxeJvRmQzLisN4iriWXqKojG9TDJqc0dPmkUw0/+AEQQ3w8z1Jx2YdFSiBGSVb/u4dPTQXU109GMVblzhfpg==,
+      }
 
   flat-cache@4.0.1:
     resolution:
@@ -7244,6 +7253,8 @@ snapshots:
     dependencies:
       locate-path: 6.0.0
       path-exists: 4.0.0
+
+  fireworks-js@2.10.8: {}
 
   flat-cache@4.0.1:
     dependencies:
