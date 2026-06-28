@@ -24,6 +24,10 @@
       <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
       <RoomStatsBar />
     </div>
+    <button class="display-page__animation-button" type="button" @click="playOverlayAnimation">
+      アニメーション再生
+    </button>
+    <PickOverlayAnimation :play-key="overlayAnimationPlayKey" />
     <DisplayParticipantQrCode :room-code="props.roomCode" :open="qrCodeVisible ?? false" />
   </div>
 </template>
@@ -39,6 +43,7 @@ import NumberBall from '@/components/layouts/NumberBall.vue'
 import BallStateGrid from '@/components/display/BallStateGrid.vue'
 import { getBallPalette } from '@/components/display/ballPalette'
 import DisplayParticipantQrCode from '@/components/display/DisplayParticipantQrCode.vue'
+import PickOverlayAnimation from '@/components/display/PickOverlayAnimation.vue'
 import RoomStatsBar from '@/components/display/RoomStatsBar.vue'
 import { useSoundEffect } from '@/composables/useSoundEffect'
 import { useRoomsStore } from '@/stores/rooms'
@@ -59,6 +64,7 @@ const {
 const props = defineProps<{ roomCode: string }>()
 const roomId = ref<RoomId | null>(null)
 const rollingPickedBall = ref<PickedBall | null>(null)
+const overlayAnimationPlayKey = ref(0)
 const drumroll = useSoundEffect('drumroll', { loop: true })
 const cymbal = useSoundEffect('cymbal')
 let rollingTimerId: number | null = null
@@ -104,6 +110,10 @@ function stopRollingPickedBall() {
   rollingTimerId = null
 }
 
+function playOverlayAnimation() {
+  overlayAnimationPlayKey.value += 1
+}
+
 watch(
   pickState,
   (nextPickState) => {
@@ -128,6 +138,7 @@ watch(latestEvent, (event) => {
   if (!event) return
   if (event.type !== 'PickFinished') return
 
+  playOverlayAnimation()
   cymbal.play()
 })
 
@@ -198,6 +209,27 @@ onBeforeUnmount(() => {
   height: 34%;
   display: grid;
   place-items: center;
+}
+
+.display-page__animation-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  padding: 10px 14px;
+  border: 1px solid rgb(23 63 117 / 0.18);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.84);
+  color: #173f75;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 8px 22px rgb(14 39 78 / 0.14);
+  cursor: pointer;
+}
+
+.display-page__animation-button:hover {
+  background: rgb(255 255 255 / 0.96);
 }
 
 .display-page__latest-number {
