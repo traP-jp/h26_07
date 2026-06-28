@@ -61,7 +61,7 @@ const demoPickSteps = [
 
 const mockCard: Card = {
   cardId: '00000000-0000-4000-8000-000000000201',
-  cardNumber: '000000000000000000000000000000000201',
+  cardNumber: '333333333333333333333333333333333333',
   ownerUserId: 'mumumu',
   cells: Array.from({ length: 25 }, (_, index) => {
     if (index === 12) {

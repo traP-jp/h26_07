@@ -73,6 +73,7 @@ const title = ['B', 'I', 'N', 'G', 'O']
   border-top: 4px solid #c32020;
   border-left: 4px solid #c32020;
   background: #c32020;
+  place-content: center;
 }
 
 .grid-cell {
