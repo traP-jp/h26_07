@@ -209,9 +209,8 @@ func (s *RoomService) StartGame(ctx context.Context, roomID model.RoomID, user m
 		return err
 	}
 	cards := make([]model.Card, 0, len(room.Participants))
-	//cardsOpenapi := make([]openapi.Card, 0, len(room.Participants))
-	for i := 0; i < len(room.Participants); i++ {
-		card, err := model.MakeRandomCard(user)
+	for _, participant := range room.Participants {
+		card, err := model.MakeRandomCard(participant.UserID)
 		if err != nil {
 			return err
 		}
