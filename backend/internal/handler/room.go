@@ -479,10 +479,7 @@ func (h *RoomHandler) StartGame(c *echo.Context) error {
 			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
 		} else if errors.Is(err, model.ErrRoomNotStartable) {
 			return c.JSON(http.StatusConflict, openapi.Error{Message: "room not startable"})
-		} else if errors.Is(err, model.ErrInvalidCard) {
-			return c.JSON(http.StatusForbidden, openapi.Error{Message: "card error"})
 		}
 		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
 	}
-	return c.NoContent(http.StatusOK)
-}
+	return c.NoContent(http.StatusNoContent)
