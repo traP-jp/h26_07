@@ -88,6 +88,12 @@ const router = createRouter({
       beforeEnter: validateDisplayRoomCode,
     },
     {
+      path: '/:roomCode/participant',
+      name: 'participant',
+      component: () => import('@/views/Participant.vue'),
+      beforeEnter: validateDisplayRoomCode,
+    },
+    {
       path: '/404',
       name: 'NotFound',
       component: () => import('@/views/NotFound.vue'),

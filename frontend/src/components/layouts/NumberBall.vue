@@ -17,6 +17,20 @@ const props = defineProps<{
       height: `${props.size}px`,
       fontSize: `${props.size * 0.42}px`,
     }"
+    v-if="props.text == 'FREE'"
+  >
+    <UIcon name="i-lucide-star" />
+  </div>
+  <div
+    class="ball"
+    :style="{
+      backgroundColor: props.ballColor,
+      color: props.textColor,
+      width: `${props.size}px`,
+      height: `${props.size}px`,
+      fontSize: `${props.size * 0.42}px`,
+    }"
+    v-else
   >
     {{ props.text }}
   </div>
