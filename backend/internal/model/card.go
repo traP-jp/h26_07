@@ -69,9 +69,8 @@ func random36Digits() string {
 	return result
 }
 
-func Shuffle_Balls(s []BallNumber) []BallNumber {
+func shuffleBalls(s []BallNumber) {
 	rand.Shuffle(len(s), func(i, j int) { s[i], s[j] = s[j], s[i] })
-	return s
 }
 
 func MakeRandomCard(owner UserID) (Card, error) {
@@ -82,7 +81,7 @@ func MakeRandomCard(owner UserID) (Card, error) {
 		for j := 15 * i; j < 15*(i+1); j++ {
 			useNumbers = append(useNumbers, BallNumber(j+1))
 		}
-		Shuffle_Balls(useNumbers)
+		shuffleBalls(useNumbers)
 		if i == 2 {
 			for _, ball := range useNumbers[:4] {
 				numbers = append(numbers, ball)
