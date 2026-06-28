@@ -60,6 +60,8 @@ playBingoOverlay()
         :key="cutinKey"
         @complete="handleCutinComplete"
         class="z-1"
+        :bottom-text="bottomText"
+        :top-text="topText"
       />
     </div>
   </div>
@@ -92,6 +94,9 @@ const showCutin = ref(false)
 const showBingo = ref(false)
 const cutinKey = ref(0)
 
+const topText = ref('GAME')
+const bottomText = ref('START')
+
 async function playGameStartCutin() {
   showBingo.value = false
   showCutin.value = false
@@ -114,7 +119,7 @@ const {
   pickedBalls,
   qrCodeVisible,
   roomState,
-  // latestNewBingos,
+  latestNewBingos,
 } = storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const displayPageElement = ref<HTMLElement | null>(null)
@@ -223,6 +228,16 @@ watch(latestEvent, (event) => {
   if (event.type === 'GameStarted') {
     playGameStartCutin()
   }
+})
+
+watch(latestNewBingos, (newBingos) => {
+  if (newBingos.length < 1) {
+    return
+  }
+
+  topText.value = String(newBingos.length) + ' players'
+  bottomText.value = 'BINGO!!!'
+  playGameStartCutin()
 })
 
 // watch(latestNewBingos, (newValue) => {
