@@ -717,6 +717,7 @@ func loadRoomSummaryBingoSummaries(db *gorm.DB, roomIDs []string, summaryByID ma
 			summary.BingoSummaries = append(summary.BingoSummaries, model.BingoSummary{
 				UserID:      model.UserID(row.UserID),
 				BingoOrders: []model.BingoOrder{},
+				CreatedAt:   row.CreatedAt,
 			})
 		}
 

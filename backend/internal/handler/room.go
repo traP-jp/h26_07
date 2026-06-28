@@ -105,6 +105,7 @@ func convertBingoSummariesToOpenAPI(bingoSummaries []model.BingoSummary) []opena
 		}
 		result = append(result, openapi.BingoSummary{
 			BingoOrders: bingoOrders,
+			CreatedAt:   bingoSummary.CreatedAt,
 			User:        openapi.User{UserID: openapi.UserID(bingoSummary.UserID)},
 		})
 	}
@@ -115,7 +116,8 @@ func convertReachSummariesToOpenAPI(reachSummaries []model.ReachSummary) []opena
 	result := make([]openapi.ReachSummary, 0, len(reachSummaries))
 	for _, reachSummary := range reachSummaries {
 		result = append(result, openapi.ReachSummary{
-			User: openapi.User{UserID: openapi.UserID(reachSummary.UserID)},
+			CreatedAt: reachSummary.CreatedAt,
+			User:      openapi.User{UserID: openapi.UserID(reachSummary.UserID)},
 		})
 	}
 	return result
