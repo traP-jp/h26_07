@@ -27,7 +27,12 @@
       </div>
       <div class="display-page__chat" aria-label="チャット">
         <div class="display-page__chat-header">Chat</div>
-        <ChatContainer :room-code="props.roomCode" :textarea="false" :connect="false" />
+        <ChatContainer
+          :room-code="props.roomCode"
+          :textarea="false"
+          :connect="false"
+          variant="display"
+        />
       </div>
     </div>
     <DisplayParticipantQrCode :room-code="props.roomCode" :open="qrCodeVisible ?? false" />
@@ -251,30 +256,6 @@ onBeforeUnmount(() => {
   font-size: 18px;
   font-weight: 800;
   line-height: 1;
-}
-
-.display-page__chat :deep(.chat-container) {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 8px 0 14px;
-}
-
-.display-page__chat :deep(.message) {
-  padding-right: 12px;
-  padding-left: 12px;
-}
-
-.display-page__chat :deep(.nakami) {
-  background: rgb(255 255 255 / 0.86);
-  border-color: rgb(56 114 177 / 0.28);
-  color: #24364d;
-}
-
-.display-page__chat :deep(.nakami.special) {
-  background: #fff2a8;
-  color: #37506f;
-  font-size: 18px;
-  line-height: 1.25;
 }
 
 .display-page__waiting-panel {

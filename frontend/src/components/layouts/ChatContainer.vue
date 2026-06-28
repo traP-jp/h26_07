@@ -9,10 +9,12 @@ const room = withDefaults(
     roomCode: string
     textarea?: boolean
     connect?: boolean
+    variant?: 'default' | 'display'
   }>(),
   {
     textarea: false,
     connect: true,
+    variant: 'default',
   },
 )
 
@@ -108,7 +110,7 @@ watch(
 </script>
 
 <template>
-  <div ref="chatContainer" class="chat-container">
+  <div ref="chatContainer" class="chat-container" :class="`chat-container--${room.variant}`">
     <div v-for="message in messages" :key="message.messageId">
       <MessageContainer
         :user-id="message.author.userId"
@@ -127,6 +129,31 @@ watch(
   overflow: auto;
   scrollbar-width: none;
 }
+
+.chat-container--display {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 0 14px;
+}
+
+.chat-container--display :deep(.message) {
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+.chat-container--display :deep(.nakami) {
+  background: rgb(255 255 255 / 0.86);
+  border-color: rgb(56 114 177 / 0.28);
+  color: #24364d;
+}
+
+.chat-container--display :deep(.nakami.special) {
+  background: #fff2a8;
+  color: #37506f;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
 .chat-container::-webkit-scrollbar {
   display: none;
 }
