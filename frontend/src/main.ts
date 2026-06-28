@@ -20,6 +20,7 @@ app.use(pinia)
 app.use(router)
 app.use(ui)
 
+await router.isReady()
 await useCurrentUserStore(pinia).init()
 
 app.mount('#app')
