@@ -1,9 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { apiClient } from '@/api/apiClient'
-
-import type { UserId } from '@/api/schema'
+import type { User, UserId } from '@/api/schema'
 
 export const useCurrentUserStore = defineStore('currentUser', () => {
   const currentUserId = ref<UserId | null>(null)
@@ -13,12 +11,23 @@ export const useCurrentUserStore = defineStore('currentUser', () => {
       return
     }
 
-    const { data, error } = await apiClient.GET('/api/me')
+    const response = await fetch('/api/me', {
+      headers: {
+        Accept: 'application/json',
+      },
+      redirect: 'manual',
+    })
 
-    if (error !== undefined || data === undefined) {
+    if (response.type === 'opaqueredirect' || response.status === 0) {
+      window.location.assign(window.location.href)
+      await new Promise<never>(() => {})
+    }
+
+    if (!response.ok) {
       throw new Error('Failed to fetch current user')
     }
 
+    const data = (await response.json()) as User
     currentUserId.value = data.userId
   }
 
