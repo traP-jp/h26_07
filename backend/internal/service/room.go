@@ -11,6 +11,7 @@ import (
 	"github.com/traP-jp/h26_07/backend/internal/model"
 	"github.com/traP-jp/h26_07/backend/internal/openapi"
 	"github.com/traP-jp/h26_07/backend/internal/repository"
+	"github.com/traP-jp/h26_07/backend/internal/utils"
 )
 
 type RoomService struct {
@@ -199,6 +200,36 @@ func (s *RoomService) PutSettings(ctx context.Context, roomID model.RoomID, user
 		return model.RoomSettings{}, err
 	}
 	return room.Settings, nil
+}
+
+func (s *RoomService) StartGame(ctx context.Context, roomID model.RoomID, user model.UserID) error {
+	room, err := s.roomRepository.FindByID(ctx, roomID)
+	if err != nil {
+		return err
+	}
+	cards := make([]model.Card, 0, len(room.Participants))
+	//cardsOpenapi := make([]openapi.Card, 0, len(room.Participants))
+	for i := 0; i < len(room.Participants); i++ {
+		card, err := model.MakeRandomCard(user)
+		if err != nil {
+			return err
+		}
+		cards = append(cards, card)
+	}
+	result, err := room.StartGame(user, cards, time.Now())
+	if err != nil {
+		return err
+	}
+	for _, cardOpenapi := range result.ParticipantCards {
+		err = s.events.SendRoom(ctx, roomID, openapi.ParticipantGameStartedEvent{
+			Type: openapi.ParticipantGameStartedEventTypeGameStarted,
+			Body: openapi.ParticipantGameStartedBody{
+				Card: utils.ConvertCardToOpenAPI(room, cardOpenapi.Card),
+			},
+		})
+	}
+	s.roomRepository.Save(ctx, room)
+	return nil
 }
 
 func (s *RoomService) ShowQRCode(ctx context.Context, roomID model.RoomID, user model.UserID) error {

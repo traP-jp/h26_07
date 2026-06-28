@@ -75,5 +75,6 @@ func registerRoutes(e *echo.Echo, cfg config.Config, db *gorm.DB) {
 		api.PUT("/rooms/:roomId/settings", roomHandler.PutSettings)
 		api.POST("/rooms/:roomId/control/qrcode/show", roomHandler.ShowQRCode)
 		api.POST("/rooms/:roomId/control/qrcode/hide", roomHandler.HideQRCode)
+		api.POST("/rooms/:roomId/control/start", roomHandler.StartGame)
 	}
 }

@@ -401,3 +401,30 @@ func (h *RoomHandler) HideQRCode(c *echo.Context) error {
 	}
 	return c.NoContent(http.StatusOK)
 }
+
+func (h *RoomHandler) StartGame(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	err = h.roomService.StartGame(c.Request().Context(), model.RoomID(roomID), user)
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
+		} else if errors.Is(err, model.ErrRoomNotStartable) {
+			return c.JSON(http.StatusConflict, openapi.Error{Message: "room not startable"})
+		} else if errors.Is(err, model.ErrInvalidCard) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "card error"})
+		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
+	return c.NoContent(http.StatusOK)
+}
