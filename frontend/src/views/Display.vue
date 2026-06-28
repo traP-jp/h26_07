@@ -91,7 +91,6 @@ import GameStartCutin from '@/components/GameStartCutin.vue'
 const showCutin = ref(false)
 const showBingo = ref(false)
 const cutinKey = ref(0)
-const bingoKey = ref(0)
 
 async function playGameStartCutin() {
   showBingo.value = false
@@ -100,14 +99,6 @@ async function playGameStartCutin() {
 
   cutinKey.value += 1
   showCutin.value = true
-}
-
-async function playBingoOverlay() {
-  showBingo.value = false
-  await nextTick()
-
-  bingoKey.value += 1
-  showBingo.value = true
 }
 
 function handleCutinComplete() {
@@ -123,7 +114,7 @@ const {
   pickedBalls,
   qrCodeVisible,
   roomState,
-  latestNewBingos,
+  // latestNewBingos,
 } = storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const displayPageElement = ref<HTMLElement | null>(null)
@@ -234,11 +225,11 @@ watch(latestEvent, (event) => {
   }
 })
 
-watch(latestNewBingos, (newValue) => {
-  if (newValue.length >= 1) {
-    playBingoOverlay()
-  }
-})
+// watch(latestNewBingos, (newValue) => {
+//   if (newValue.length >= 1) {
+//     playBingoOverlay()
+//   }
+// })
 
 onMounted(async () => {
   document.addEventListener('fullscreenchange', syncFullscreenState)
