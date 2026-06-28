@@ -64,7 +64,7 @@ const demoPickSteps = [
 const mockCards: Card[] = [
   {
     cardId: '00000000-0000-4000-8000-000000000201',
-    cardNumber: '111111',
+    cardNumber: '111111111111111111111111111111111111',
     ownerUserId: 'demo',
     cells: [
       { index: 0, number: 1, displayText: '1', cellState: 'closed' },
@@ -103,7 +103,7 @@ const mockCards: Card[] = [
 
   {
     cardId: '00000000-0000-4000-8000-000000000202',
-    cardNumber: '222222',
+    cardNumber: '222222222222222222222222222222222222',
     ownerUserId: 'demo',
     cells: [
       { index: 0, number: 1, displayText: '1', cellState: 'closed' },
@@ -142,7 +142,7 @@ const mockCards: Card[] = [
 
   {
     cardId: '00000000-0000-4000-8000-000000000203',
-    cardNumber: '333333',
+    cardNumber: '333333333333333333333333333333333333',
     ownerUserId: 'demo',
     cells: [
       { index: 0, number: 1, displayText: '1', cellState: 'closed' },
@@ -181,7 +181,7 @@ const mockCards: Card[] = [
 
   {
     cardId: '00000000-0000-4000-8000-000000000204',
-    cardNumber: '444444',
+    cardNumber: '444444444444444444444444444444444444',
     ownerUserId: 'demo',
     cells: [
       { index: 0, number: 1, displayText: '1', cellState: 'closed' },
