@@ -19,7 +19,7 @@ export const useCurrentUserStore = defineStore('currentUser', () => {
     })
 
     if (response.type === 'opaqueredirect' || response.status === 0) {
-      window.location.href = '/api/me'
+      window.location.assign(window.location.href)
       await new Promise<never>(() => {})
     }
 
