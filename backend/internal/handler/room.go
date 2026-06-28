@@ -369,13 +369,12 @@ func (h *RoomHandler) ShowQRCode(c *echo.Context) error {
 	user := model.UserID(userRaw.Name)
 	err = h.roomService.ShowQRCode(c.Request().Context(), model.RoomID(roomID), user)
 	if err != nil {
-		if errors.Is(err, model.ErrRoomNotFound) {
+		if isRoomNotFoundError(err) {
 			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
-		} else if errors.Is(err, model.ErrRoomNotConfigurable) {
-			return c.JSON(http.StatusForbidden, openapi.Error{Message: "error forbidden"})
-		} else {
-			return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
 		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
 	}
 	return c.NoContent(http.StatusOK)
 }
@@ -393,13 +392,12 @@ func (h *RoomHandler) HideQRCode(c *echo.Context) error {
 	user := model.UserID(userRaw.Name)
 	err = h.roomService.HideQRCode(c.Request().Context(), model.RoomID(roomID), user)
 	if err != nil {
-		if errors.Is(err, model.ErrRoomNotFound) {
+		if isRoomNotFoundError(err) {
 			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
-		} else if errors.Is(err, model.ErrRoomNotConfigurable) {
-			return c.JSON(http.StatusForbidden, openapi.Error{Message: "error forbidden"})
-		} else {
-			return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
 		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
 	}
 	return c.NoContent(http.StatusOK)
 }
