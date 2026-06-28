@@ -70,7 +70,7 @@ const router = createRouter({
         },
         {
           path: '/:roomCode',
-          redirect: (to) => `/${String(to.params.roomCode)}/participants`,
+          redirect: (to) => `/${String(to.params.roomCode)}/participant`,
         },
         {
           path: '/:pathMatch(.*)*',

@@ -39,11 +39,20 @@ export default defineConfig(({ mode }) => {
                 changeOrigin: true,
                 ws: true,
                 configure: (proxy) => {
-                  proxy.on('proxyReq', (proxyReq) => {
+                  const setForwardedUser = (proxyReq: {
+                    setHeader: (name: string, value: string) => void
+                  }) => {
                     const traqId = env.MY_TRAQ_ID
                     if (traqId) {
                       proxyReq.setHeader('X-Forwarded-User', traqId)
                     }
+                  }
+
+                  proxy.on('proxyReq', (proxyReq) => {
+                    setForwardedUser(proxyReq)
+                  })
+                  proxy.on('proxyReqWs', (proxyReq) => {
+                    setForwardedUser(proxyReq)
                   })
                 },
               },

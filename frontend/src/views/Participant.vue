@@ -31,6 +31,7 @@ onMounted(async () => {
     return
   }
 
+  await roomsStore.joinRoom(roomId.value)
   roomWebSocketStore.connect({ roomId: roomId.value, mode: 'participant' })
 })
 onBeforeUnmount(() => {
