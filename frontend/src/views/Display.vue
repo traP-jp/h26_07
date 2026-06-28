@@ -230,8 +230,8 @@ watch(latestEvent, (event) => {
   }
 })
 
-watch(latestNewBingos, (newBingos) => {
-  if (newBingos.length < 1) {
+watch(latestNewBingos, (newBingos, oldBingos = []) => {
+  if (newBingos.length < 1 || newBingos.length <= oldBingos.length) {
     return
   }
 
