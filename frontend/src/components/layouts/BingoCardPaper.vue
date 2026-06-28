@@ -14,6 +14,12 @@ const props = withDefaults(
 )
 
 type CardEffectMode = 'bingo' | 'reach'
+type LineEffectItem = {
+  id: string
+  mode: CardEffectMode
+  line: Line
+  style: Record<string, string>
+}
 
 const cardNo = computed(() => props.card?.cardNumber ?? 'not assigned')
 const size = computed(() => props.cellSize)
@@ -47,8 +53,30 @@ const activeEffectKey = computed(() => {
   return effect ? `${effect.mode}-${effect.line.join('-')}-${effectSerial.value}` : 'none'
 })
 
-const lineEffectStyle = computed(() => {
-  const line = activeEffect.value?.line
+const persistentLineEffects = computed<LineEffectItem[]>(() => {
+  const bingoLines = props.card?.bingoLines ?? []
+  const bingoLineKeys = new Set(bingoLines.map(lineKey))
+  const reachLines = (props.card?.reachLines ?? []).filter(
+    (line) => !bingoLineKeys.has(lineKey(line)),
+  )
+
+  return [
+    ...bingoLines.map((line, index) => ({
+      id: `bingo-${index}-${lineKey(line)}`,
+      mode: 'bingo' as const,
+      line,
+      style: createLineEffectStyle(line),
+    })),
+    ...reachLines.map((line, index) => ({
+      id: `reach-${index}-${lineKey(line)}`,
+      mode: 'reach' as const,
+      line,
+      style: createLineEffectStyle(line),
+    })),
+  ]
+})
+
+function createLineEffectStyle(line: Line): Record<string, string> {
   if (!line || line.length < 2) return {}
 
   const start = cellCenter(line[0]!)
@@ -64,7 +92,11 @@ const lineEffectStyle = computed(() => {
     '--line-length': `${length}%`,
     '--line-angle': `${angle}rad`,
   }
-})
+}
+
+function lineKey(line: Line) {
+  return line.join('-')
+}
 
 const celebrationParticles = Array.from({ length: 18 }, (_, index) => ({
   id: index,
@@ -148,11 +180,11 @@ watch(
       </div>
 
       <div
-        v-if="activeEffect"
-        :key="activeEffectKey"
-        class="line-effect"
-        :class="`line-effect--${activeEffect.mode}`"
-        :style="lineEffectStyle"
+        v-for="lineEffect in persistentLineEffects"
+        :key="`${lineEffect.id}-${effectSerial}`"
+        class="line-effect line-effect--persistent"
+        :class="`line-effect--${lineEffect.mode}`"
+        :style="lineEffect.style"
       ></div>
     </div>
 
@@ -243,7 +275,7 @@ watch(
 }
 
 .grid-cell--line-reach {
-  background: #f8fbff;
+  background: #fff8fb;
 }
 
 .grid-cell--line-bingo {
@@ -261,7 +293,7 @@ watch(
 }
 
 .grid-cell--active-reach::before {
-  background: radial-gradient(circle, rgb(186 226 255 / 0.78), rgb(212 245 255 / 0.28) 64%);
+  background: radial-gradient(circle, rgb(255 211 235 / 0.76), rgb(255 244 185 / 0.24) 64%);
   animation: reach-cell-glow 1250ms ease-out var(--shine-delay) both;
 }
 
@@ -276,7 +308,23 @@ watch(
 }
 
 .grid-cell--reach-missing :deep(.ball) {
-  animation: reach-missing-pulse 1500ms ease-in-out infinite;
+  animation: reach-ball-wobble 1500ms ease-in-out infinite;
+}
+
+.grid-cell--line-reach:not(.grid-cell--line-bingo) :deep(.ball) {
+  box-shadow:
+    0 3px 9px rgb(0 0 0 / 0.08),
+    0 0 0 calc(var(--cell-size) * 0.025) rgb(255 193 224 / 0.18),
+    0 0 12px rgb(255 185 105 / 0.22);
+  animation: reach-ball-aura 1700ms ease-in-out infinite;
+}
+
+.grid-cell--line-reach.grid-cell--reach-missing:not(.grid-cell--line-bingo) :deep(.ball) {
+  animation: reach-ball-wobble 1500ms ease-in-out infinite;
+}
+
+.grid-cell--line-bingo :deep(.ball) {
+  animation: bingo-ball-shimmer 1800ms ease-in-out infinite;
 }
 
 .line-effect {
@@ -306,36 +354,36 @@ watch(
   position: absolute;
   top: 50%;
   left: 0;
-  width: calc(var(--cell-size) * 0.48);
-  height: calc(var(--cell-size) * 0.48);
+  width: calc(var(--cell-size) * 0.2);
+  height: calc(var(--cell-size) * 0.2);
   border-radius: 999px;
   content: '';
   transform: translate(-50%, -50%);
 }
 
 .line-effect--reach {
-  filter: drop-shadow(0 0 10px rgb(156 218 255 / 0.6));
-  animation: line-effect-fade 1100ms ease-out both;
+  filter: drop-shadow(0 0 10px rgb(255 181 92 / 0.58));
+  animation: line-effect-hold 1700ms ease-in-out infinite;
 }
 
 .line-effect--reach::before {
-  background: linear-gradient(90deg, rgb(182 226 255 / 0), #b8e8ff 36%, #d7fff2);
-  animation: line-sweep 920ms ease-out 140ms both;
+  background: linear-gradient(90deg, rgb(255 205 232 / 0), #ffc1dc 34%, #fff0a8 68%);
+  animation: line-sweep-loop 1700ms ease-in-out infinite;
 }
 
 .line-effect--reach::after {
-  background: radial-gradient(circle, #ffffff 0 22%, #b8e8ff 44%, rgb(184 232 255 / 0) 72%);
-  animation: line-comet 920ms ease-out 140ms both;
+  background: radial-gradient(circle, #ffffff 0 22%, #fff0a8 42%, rgb(255 193 220 / 0) 72%);
+  animation: line-comet-loop 1700ms ease-in-out infinite;
 }
 
 .line-effect--bingo {
   filter: drop-shadow(0 0 14px rgb(255 192 226 / 0.72));
-  animation: line-effect-fade 1300ms ease-out both;
+  animation: line-effect-hold 1550ms ease-in-out infinite;
 }
 
 .line-effect--bingo::before {
   background: linear-gradient(90deg, rgb(255 206 235 / 0), #ffcde8 28%, #fff0a8 62%, #c9f7ff);
-  animation: line-sweep 820ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+  animation: line-sweep-loop 1550ms cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 .line-effect--bingo::after {
@@ -346,7 +394,7 @@ watch(
     #ffcde8 56%,
     rgb(255 205 232 / 0) 76%
   );
-  animation: line-comet 820ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+  animation: line-comet-loop 1550ms cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 .bingo-celebration {
@@ -487,13 +535,67 @@ watch(
   }
 }
 
-@keyframes line-effect-fade {
+@keyframes reach-ball-aura {
   0%,
   100% {
-    opacity: 0;
+    box-shadow:
+      0 3px 9px rgb(0 0 0 / 0.08),
+      0 0 0 calc(var(--cell-size) * 0.02) rgb(255 193 224 / 0.14),
+      0 0 10px rgb(255 185 105 / 0.18);
+    transform: scale(1);
   }
-  14%,
-  78% {
+  45% {
+    box-shadow:
+      0 3px 9px rgb(0 0 0 / 0.08),
+      0 0 0 calc(var(--cell-size) * 0.055) rgb(255 193 224 / 0.22),
+      0 0 16px rgb(255 185 105 / 0.26);
+    transform: scale(1.025);
+  }
+}
+
+@keyframes reach-ball-wobble {
+  0%,
+  100% {
+    box-shadow:
+      0 3px 9px rgb(0 0 0 / 0.08),
+      0 0 0 calc(var(--cell-size) * 0.025) rgb(255 193 224 / 0.16);
+    transform: scale(1) rotate(0);
+  }
+  35% {
+    box-shadow:
+      0 3px 9px rgb(0 0 0 / 0.08),
+      0 0 0 calc(var(--cell-size) * 0.065) rgb(255 193 224 / 0.24),
+      0 0 18px rgb(255 185 105 / 0.28);
+    transform: scale(1.04) rotate(-1.5deg);
+  }
+  65% {
+    transform: scale(1.02) rotate(1.5deg);
+  }
+}
+
+@keyframes bingo-ball-shimmer {
+  0%,
+  100% {
+    box-shadow:
+      0 3px 9px rgb(0 0 0 / 0.08),
+      0 0 0 calc(var(--cell-size) * 0.02) rgb(255 240 168 / 0.16),
+      0 0 10px rgb(255 122 182 / 0.18);
+  }
+  48% {
+    box-shadow:
+      0 3px 9px rgb(0 0 0 / 0.08),
+      0 0 0 calc(var(--cell-size) * 0.045) rgb(255 240 168 / 0.24),
+      0 0 16px rgb(255 122 182 / 0.26);
+  }
+}
+
+@keyframes line-effect-hold {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  18%,
+  72% {
     opacity: 1;
   }
 }
@@ -521,6 +623,33 @@ watch(
   }
 }
 
+@keyframes line-sweep-loop {
+  0% {
+    transform: scaleX(0);
+  }
+  58%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes line-comet-loop {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.45;
+  }
+  62% {
+    left: 100%;
+    opacity: 0.45;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
 @keyframes celebration-pop {
   0% {
     opacity: 0;
