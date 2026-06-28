@@ -83,7 +83,7 @@ watch(
 
 <style>
 #chatContainer {
-  min-height: calc(100% - 150px);
+  min-height: calc(100% - 50px);
   overflow: scroll;
   scrollbar-width: none;
 }

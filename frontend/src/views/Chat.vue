@@ -10,6 +10,6 @@ import AllMessages from '@/components/layouts/AllMessages.vue'
 
 <style>
 #chat {
-  height: 100vh;
+  height: 90vh;
 }
 </style>
