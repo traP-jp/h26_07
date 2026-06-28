@@ -25,7 +25,7 @@
         <BallStateGrid v-else :picked-balls="pickedBalls" :latest-picked-ball="latestPickedBall" />
         <RoomStatsBar />
       </div>
-      <div class="display-page__chat" aria-label="チャット">
+      <div class="display-page__chat">
         <div class="display-page__chat-header">Chat</div>
         <ChatContainer
           :room-code="props.roomCode"
@@ -305,9 +305,15 @@ onBeforeUnmount(() => {
 }
 
 .display-page__chat-header {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
   padding: 16px 18px 12px;
   border-bottom: 1px solid rgb(255 255 255 / 0.48);
+  background: rgb(255 255 255 / 0.28);
+  backdrop-filter: blur(10px) saturate(1.2);
   color: #1f4f8f;
   font-size: 18px;
   font-weight: 800;
