@@ -1,33 +1,64 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import type { Uuid, Message, DateTime } from '@/api/schema'
+import { nextTick, onMounted, ref, watch } from 'vue'
+import type { Uuid, Message, DateTime, WebSocketMode } from '@/api/schema'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
-const room = defineProps<{ roomCode: string; textarea: boolean }>()
+import { useRoomsStore } from '@/stores/rooms'
+
+const room = withDefaults(
+  defineProps<{
+    roomCode: string
+    textarea?: boolean
+    connect?: boolean
+    variant?: 'default' | 'display'
+  }>(),
+  {
+    textarea: false,
+    connect: true,
+    variant: 'default',
+  },
+)
+
 const messages = ref<Message[]>([])
-const chatContainer = ref<HTMLDivElement | null>(null)
+const chatContainer = ref<HTMLElement | null>(null)
+
+const scrollToBottom = async () => {
+  await nextTick()
+  const element = chatContainer.value
+  if (!element) return
+
+  element.scrollTop = element.scrollHeight
+}
 
 const addUserMessage = async (m: Message) => {
   messages.value.push(m)
-  await nextTick()
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-  }
+  void scrollToBottom()
 }
 
 const addSpecialMessage = (id: Uuid, content: string, createdAt: DateTime) => {
   messages.value.push({
-    messageId: id,
+    messageId: `${id}-${messages.value.length}` as Uuid,
     content: content,
     author: { userId: '' },
     createdAt: createdAt,
   })
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-  }
+  void scrollToBottom()
 }
 
 const store = useRoomWebSocketStore()
-store.connect({ roomId: room.roomCode, mode: room.textarea ? 'participant' : 'display' })
+const roomsStore = useRoomsStore()
+
+onMounted(async () => {
+  if (!room.connect) return
+
+  const roomId = await roomsStore.getRoomIdByCode(room.roomCode)
+  if (!roomId) return
+
+  const mode: WebSocketMode = room.textarea ? 'participant' : 'display'
+  if (store.isActiveConnection({ roomId, mode })) return
+
+  store.connect({ roomId, mode })
+})
+
 watch(
   () => store.latestMessage,
   (newValue) => {
@@ -98,7 +129,32 @@ watch(
   overflow-y: scroll;
   scrollbar-width: none;
 }
-#chatContainer::-webkit-scrollbar {
+
+.chat-container--display {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 0 14px;
+}
+
+.chat-container--display :deep(.message) {
+  padding-right: 12px;
+  padding-left: 12px;
+}
+
+.chat-container--display :deep(.nakami) {
+  background: rgb(255 255 255 / 0.86);
+  border-color: rgb(56 114 177 / 0.28);
+  color: #24364d;
+}
+
+.chat-container--display :deep(.nakami.special) {
+  background: #fff2a8;
+  color: #37506f;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.chat-container::-webkit-scrollbar {
   display: none;
 }
 </style>

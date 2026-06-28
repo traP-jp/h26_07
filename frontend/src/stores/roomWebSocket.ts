@@ -76,6 +76,14 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
   const isConnected = computed(() => status.value === 'open')
   const canUseParticipantCard = computed(() => mode.value === 'participant' && card.value !== null)
 
+  function isActiveConnection(options: ConnectOptions) {
+    return (
+      roomId.value === options.roomId &&
+      mode.value === options.mode &&
+      (status.value === 'connecting' || status.value === 'open')
+    )
+  }
+
   function resetRoomState() {
     latestEvent.value = null
     latestPickedBall.value = null
@@ -188,6 +196,10 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
   }
 
   function connect(options: ConnectOptions) {
+    if (isActiveConnection(options)) {
+      return
+    }
+
     disconnect()
     resetRoomState()
 
@@ -271,6 +283,7 @@ export const useRoomWebSocketStore = defineStore('roomWebSocket', () => {
     qrCodeVisible,
     isConnected,
     canUseParticipantCard,
+    isActiveConnection,
     connect,
     disconnect,
     resetRoomState,
