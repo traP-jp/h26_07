@@ -43,7 +43,7 @@ const props = withDefaults(defineProps<Props>(), {
   textStagger: 180,
   fadeDuration: 500,
   rotateFrom: -30,
-  panelOpacity: 0.7,
+  panelOpacity: 0.8,
 })
 const emit = defineEmits<{
   complete: []
