@@ -136,14 +136,17 @@ watch(
     id="chatContainer"
     :class="{ 'chat-container--display': room.variant === 'display' }"
   >
-    <div v-for="message in messages" :key="message.messageId">
-      <MessageContainer
-        :user-id="message.author.userId"
-        :content="message.content"
-        :notification-type="notificationType(message)"
-      ></MessageContainer>
+    <div class="chat-container__messages">
+      <div v-for="message in messages" :key="message.messageId">
+        <MessageContainer
+          :user-id="message.author.userId"
+          :content="message.content"
+          :notification-type="notificationType(message)"
+        ></MessageContainer>
+      </div>
     </div>
   </div>
+
   <div v-if="room.textarea" style="height: 30px">
     <PostMessage :room-code="room.roomCode"></PostMessage>
   </div>
@@ -156,8 +159,16 @@ watch(
   scrollbar-width: none;
 }
 
-.chat-container--display {
+.chat-container__messages {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+#chatContainer.chat-container--display {
   flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   padding: 8px 0 14px;
 }
