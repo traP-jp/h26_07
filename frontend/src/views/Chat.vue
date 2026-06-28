@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AllMessages from '@/components/layouts/AllMessages.vue'
+import ChatContainer from '@/components/layouts/ChatContainer.vue'
 </script>
 
 <template>
   <div id="chat">
-    <AllMessages room-code="123456" textarea></AllMessages>
+    <ChatContainer room-code="123456" textarea></ChatContainer>
   </div>
 </template>
 

@@ -73,7 +73,10 @@ watch(
 <template>
   <div id="chatContainer">
     <div v-for="message in messages" :key="message.messageId">
-      <Message :user-id="message.author.userId" :content="message.content"></Message>
+      <MessageContainer
+        :user-id="message.author.userId"
+        :content="message.content"
+      ></MessageContainer>
     </div>
   </div>
   <div v-if="room.textarea">
