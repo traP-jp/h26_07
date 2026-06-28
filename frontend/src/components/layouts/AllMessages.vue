@@ -19,7 +19,7 @@ const addSpecialMessage = (id: Uuid, content: string, createdAt: DateTime) => {
 }
 
 const store = useRoomWebSocketStore()
-
+store.connect({ roomId: room.roomCode, mode: room.textarea ? 'participant' : 'display' })
 watch(
   () => store.latestMessage,
   (newValue) => {
