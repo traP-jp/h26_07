@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"cmp"
+	"errors"
 	"net/http"
-	"slices"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
@@ -38,6 +37,14 @@ func convertOptionalUserIDsToModel(userIDs *[]openapi.UserID) []model.UserID {
 	return convertUserIDsToModel(*userIDs)
 }
 
+func convertOptionalUserIDsToModelPointer(userIDs *[]openapi.UserID) *[]model.UserID {
+	if userIDs == nil {
+		return nil
+	}
+	converted := convertUserIDsToModel(*userIDs)
+	return &converted
+}
+
 func convertUserIDsToOpenAPI(userIDs []model.UserID) []openapi.User {
 	var result []openapi.User
 	for _, userID := range userIDs {
@@ -52,6 +59,22 @@ func convertRoomSettingsToModel(settings openapi.GameSettingsInput) model.RoomSe
 		Description: settings.Description,
 		Admins:      convertOptionalUserIDsToModel(settings.AdminUserIds),
 	}
+}
+
+func convertRoomSettingsUpdateToService(settings openapi.GameSettingsInput) service.RoomSettingsUpdate {
+	return service.RoomSettingsUpdate{
+		Name:        settings.Name,
+		Description: settings.Description,
+		Admins:      convertOptionalUserIDsToModelPointer(settings.AdminUserIds),
+	}
+}
+
+func adminUserIDsSpecifiedEmpty(settings openapi.GameSettingsInput) bool {
+	return settings.AdminUserIds != nil && len(*settings.AdminUserIds) == 0
+}
+
+func isRoomNotFoundError(err error) bool {
+	return errors.Is(err, repository.ErrRoomNotFound) || errors.Is(err, model.ErrRoomNotFound)
 }
 
 func convertRoomSettingsToOpenAPI(settings model.RoomSettings) openapi.GameSettings {
@@ -73,38 +96,29 @@ func convertParticipantsToOpenAPI(participants []model.Participant) []openapi.Pa
 	return result
 }
 
-func toOpenAPIBingoSummaries(records []model.BingoRecord) []openapi.BingoSummary {
-	sortedRecords := slices.Clone(records)
-	slices.SortFunc(sortedRecords, func(a, b model.BingoRecord) int {
-		if n := cmp.Compare(a.Order, b.Order); n != 0 {
-			return n
+func convertBingoSummariesToOpenAPI(bingoSummaries []model.BingoSummary) []openapi.BingoSummary {
+	result := make([]openapi.BingoSummary, 0, len(bingoSummaries))
+	for _, bingoSummary := range bingoSummaries {
+		bingoOrders := make([]int, 0, len(bingoSummary.BingoOrders))
+		for _, bingoOrder := range bingoSummary.BingoOrders {
+			bingoOrders = append(bingoOrders, int(bingoOrder))
 		}
-		return cmp.Compare(a.UserID, b.UserID)
-	})
-
-	summaries := make([]openapi.BingoSummary, 0)
-	indexByUserID := make(map[model.UserID]int)
-
-	for _, record := range sortedRecords {
-		index, ok := indexByUserID[record.UserID]
-		if !ok {
-			index = len(summaries)
-			indexByUserID[record.UserID] = index
-			summaries = append(summaries, openapi.BingoSummary{
-				User: openapi.User{
-					UserID: openapi.UserID(record.UserID),
-				},
-				BingoOrders: []int{},
-			})
-		}
-
-		summaries[index].BingoOrders = append(
-			summaries[index].BingoOrders,
-			int(record.Order),
-		)
+		result = append(result, openapi.BingoSummary{
+			BingoOrders: bingoOrders,
+			User:        openapi.User{UserID: openapi.UserID(bingoSummary.UserID)},
+		})
 	}
+	return result
+}
 
-	return summaries
+func convertReachSummariesToOpenAPI(reachSummaries []model.ReachSummary) []openapi.ReachSummary {
+	result := make([]openapi.ReachSummary, 0, len(reachSummaries))
+	for _, reachSummary := range reachSummaries {
+		result = append(result, openapi.ReachSummary{
+			User: openapi.User{UserID: openapi.UserID(reachSummary.UserID)},
+		})
+	}
+	return result
 }
 
 func convertRoom(room *model.Room) openapi.Room {
@@ -115,7 +129,8 @@ func convertRoom(room *model.Room) openapi.Room {
 		PickState:      openapi.PickState(room.PickState),
 		QrCodeVisible:  room.QrCodeVisible,
 		Participants:   convertParticipantsToOpenAPI(room.Participants),
-		BingoSummaries: toOpenAPIBingoSummaries(room.BingoRecords),
+		BingoSummaries: convertBingoSummariesToOpenAPI(room.BingoSummaries()),
+		ReachSummaries: convertReachSummariesToOpenAPI(room.ReachSummaries()),
 		CreatedAt:      room.CreatedAt,
 		UpdatedAt:      room.UpdatedAt,
 		RoomCode:       openapi.RoomCode(room.RoomCode),
@@ -133,13 +148,19 @@ func (h *RoomHandler) PostRoom(c *echo.Context) error {
 			Message: "invalid request body",
 		})
 	}
+	if adminUserIDsSpecifiedEmpty(req.Settings) {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "adminUserIds must not be empty"})
+	}
 
 	room, err := h.roomService.CreateRoom(c.Request().Context(), convertRoomSettingsToModel(req.Settings), model.UserID(user.Name))
 	if err != nil {
+		if errors.Is(err, model.ErrRoomSettingsInvalid) {
+			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "invalid room settings"})
+		}
 		return c.JSON(
 			http.StatusInternalServerError,
 			openapi.Error{
-				Message: "failed to create uuid",
+				Message: "failed to create room",
 			},
 		)
 	}
@@ -147,7 +168,7 @@ func (h *RoomHandler) PostRoom(c *echo.Context) error {
 }
 
 func (h *RoomHandler) GetRoom(c *echo.Context) error {
-	_, ok := authmiddleware.GetAuthenticatedUser(c)
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
 	if !ok {
 		return c.NoContent(http.StatusUnauthorized)
 	}
@@ -158,30 +179,17 @@ func (h *RoomHandler) GetRoom(c *echo.Context) error {
 	}
 	room, err := h.roomService.GetRoom(c.Request().Context(), model.RoomID(roomID))
 	if err != nil {
-		switch err {
-		case repository.ErrRoomNotFound:
+		switch {
+		case errors.Is(err, repository.ErrRoomNotFound):
 			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		default:
+			return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
 		}
+	}
+	if !room.CanView(model.UserID(userRaw.Name)) {
+		return c.JSON(http.StatusForbidden, openapi.Error{Message: "room view forbidden"})
 	}
 	return c.JSON(http.StatusOK, convertRoom(room))
-}
-
-func convertBingoSummariesFromModelBingoSummary(bingosummaryies []model.BingoSummary) []openapi.BingoSummary {
-	result := make([]openapi.BingoSummary, 0, len(bingosummaryies))
-	for _, bingosummary := range bingosummaryies {
-		bingoOrders := make([]int, 0, len(bingosummary.BingoOrders))
-		for _, bingoOrder := range bingosummary.BingoOrders {
-			bingoOrders = append(bingoOrders, int(bingoOrder))
-		}
-		result = append(result,
-
-			openapi.BingoSummary{
-				BingoOrders: bingoOrders,
-				User:        openapi.User{UserID: openapi.UserID(bingosummary.UserID)},
-			},
-		)
-	}
-	return result
 }
 
 func convertRoomSummary(rooms []model.RoomSummary) []openapi.Room {
@@ -195,7 +203,8 @@ func convertRoomSummary(rooms []model.RoomSummary) []openapi.Room {
 				PickState:      openapi.PickState(room.PickState),
 				QrCodeVisible:  room.QrCodeVisible,
 				Participants:   convertParticipantsToOpenAPI(room.Participants),
-				BingoSummaries: convertBingoSummariesFromModelBingoSummary(room.BingoSummaries),
+				BingoSummaries: convertBingoSummariesToOpenAPI(room.BingoSummaries),
+				ReachSummaries: convertReachSummariesToOpenAPI(room.ReachSummaries),
 				CreatedAt:      room.CreatedAt,
 				UpdatedAt:      room.UpdatedAt,
 				RoomCode:       openapi.RoomCode(room.RoomCode),
@@ -231,8 +240,222 @@ func (h *RoomHandler) PostParticipant(c *echo.Context) error {
 	user := model.UserID(userRaw.Name)
 	err = h.roomService.PostParticipants(c.Request().Context(), model.RoomID(roomID), user)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, openapi.Error{Message: "Room Not found"})
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		}
+		if errors.Is(err, model.ErrRoomNotJoinable) {
+			return c.JSON(http.StatusConflict, openapi.Error{Message: "room is not joinable"})
+		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
 	}
 
+	return c.NoContent(http.StatusNoContent)
+}
+
+func convertMessageToOpenAPI(message model.Message) openapi.Message {
+	return openapi.Message{
+		MessageID: uuid.UUID(message.MessageID).String(),
+		Content:   message.Content,
+		Author: openapi.User{
+			UserID: openapi.UserID(message.Author),
+		},
+		CreatedAt: message.CreatedAt,
+	}
+}
+
+func (h *RoomHandler) PostMessage(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	var createMessageRequest openapi.CreateMessageRequest
+	if err := c.Bind(&createMessageRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "message invalid"})
+	}
+	content := createMessageRequest.Content
+	message, err := h.roomService.PostMessage(c.Request().Context(), model.RoomID(roomID), user, content)
+	if err != nil {
+		if errors.Is(err, model.ErrMessageInvalid) {
+			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "message invalid"})
+		} else if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomMessageNotAllowed) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "message not allowed"})
+		} else if errors.Is(err, model.ErrRoomMessageNotPostable) {
+			return c.JSON(http.StatusConflict, openapi.Error{Message: "message not postable"})
+		} else {
+			return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+		}
+	}
+	return c.JSON(http.StatusOK, convertMessageToOpenAPI(*message))
+}
+
+func (h *RoomHandler) GetMessages(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	messages, err := h.roomService.GetMessages(c.Request().Context(), model.RoomID(roomID), model.UserID(userRaw.Name))
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "room message not allowed"})
+		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
+	result := make([]openapi.Message, 0, len(messages))
+	for _, message := range messages {
+		result = append(result, convertMessageToOpenAPI(message))
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
+func (h *RoomHandler) PutSettings(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	var settingsRaw openapi.UpdateGameSettingsRequest
+	if err := c.Bind(&settingsRaw); err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid Settings"})
+	}
+	if adminUserIDsSpecifiedEmpty(settingsRaw.Settings) {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "adminUserIds must not be empty"})
+	}
+	settings, err := h.roomService.PutSettings(c.Request().Context(), model.RoomID(roomID), user, convertRoomSettingsUpdateToService(settingsRaw.Settings))
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
+		} else if errors.Is(err, model.ErrRoomSettingsInvalid) {
+			return c.JSON(http.StatusBadRequest, openapi.Error{Message: "invalid room settings"})
+		} else if errors.Is(err, model.ErrRoomNotConfigurable) {
+			return c.JSON(http.StatusConflict, openapi.Error{Message: "room is not configurable"})
+		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
+	return c.JSON(http.StatusOK, convertRoomSettingsToOpenAPI(settings))
+}
+
+func (h *RoomHandler) ShowQRCode(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	err = h.roomService.ShowQRCode(c.Request().Context(), model.RoomID(roomID), user)
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
+		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *RoomHandler) HideQRCode(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	err = h.roomService.HideQRCode(c.Request().Context(), model.RoomID(roomID), user)
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		} else if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
+		}
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *RoomHandler) PostPickStart(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	err = h.roomService.StartPick(c.Request().Context(), model.RoomID(roomID), user)
+
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		}
+		if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
+		}
+		if errors.Is(err, model.ErrRoomPickNotStartable) || errors.Is(err, model.ErrNoDrawableBalls) {
+			return c.JSON(http.StatusConflict, openapi.Error{Message: "pick is not startable"})
+		}
+
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *RoomHandler) PostPickCancel(c *echo.Context) error {
+	userRaw, ok := authmiddleware.GetAuthenticatedUser(c)
+	if !ok {
+		return c.NoContent(http.StatusUnauthorized)
+	}
+	roomIDString := c.Param("roomId")
+	roomID, err := uuid.Parse(roomIDString)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, openapi.Error{Message: "Invalid roomId"})
+	}
+	user := model.UserID(userRaw.Name)
+	err = h.roomService.CancelPick(c.Request().Context(), model.RoomID(roomID), user)
+
+	if err != nil {
+		if isRoomNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, openapi.Error{Message: "room not found"})
+		}
+		if errors.Is(err, model.ErrRoomForbidden) {
+			return c.JSON(http.StatusForbidden, openapi.Error{Message: "admin required"})
+		}
+		if errors.Is(err, model.ErrRoomPickNotCancelable) {
+			return c.JSON(http.StatusConflict, openapi.Error{Message: "pick is not cancelable"})
+		}
+
+		return c.JSON(http.StatusInternalServerError, openapi.Error{Message: "internal server error"})
+	}
 	return c.NoContent(http.StatusNoContent)
 }

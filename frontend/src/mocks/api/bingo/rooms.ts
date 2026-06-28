@@ -5,6 +5,36 @@ import { readJson } from './core'
 
 export const mockRooms: Room[] = [
   {
+    roomId: '00000000-0000-4000-8000-000000000011',
+    roomCode: '111111',
+    state: 'waiting',
+    pickState: 'idle',
+    qrCodeVisible: true,
+    participants: [
+      {
+        user: { userId: 'mumumu' },
+        joinedAt: '2026-06-28T10:01:00.000Z',
+      },
+      {
+        user: { userId: 'rurun' },
+        joinedAt: '2026-06-28T10:02:00.000Z',
+      },
+      {
+        user: { userId: 'kurao' },
+        joinedAt: '2026-06-28T10:03:00.000Z',
+      },
+    ],
+    bingoSummaries: [],
+    reachSummaries: [],
+    settings: {
+      name: '未開始表示確認ビンゴ',
+      description: 'display 画面でゲーム未開始状態を確認するためのモックルームです。',
+      admins: [{ userId: 'mumumu' }],
+    },
+    createdAt: '2026-06-28T10:00:00.000Z',
+    updatedAt: '2026-06-28T10:03:00.000Z',
+  },
+  {
     roomId: '00000000-0000-4000-8000-000000000001',
     roomCode: '123456',
     state: 'waiting',

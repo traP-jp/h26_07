@@ -47,9 +47,26 @@ const router = createRouter({
           component: () => import('@/views/New.vue'),
         },
         {
+          path: '/:roomCode/settings',
+          name: 'Settings',
+          component: () => import('@/views/Settings.vue'),
+          props: true,
+        },
+        {
+          path: '/:roomCode/controller',
+          name: 'Controller',
+          component: () => import('@/views/Controller.vue'),
+          props: true,
+        },
+        {
           path: '/rurun',
           name: 'rurun',
           component: () => import('@/views/Rurun.vue'),
+        },
+        {
+          path: '/chat',
+          name: 'chat',
+          component: () => import('@/views/Chat.vue'),
         },
         {
           path: '/:roomCode',
@@ -67,6 +84,7 @@ const router = createRouter({
       path: '/:roomCode/display',
       name: 'display',
       component: () => import('@/views/Display.vue'),
+      props: true,
       beforeEnter: validateDisplayRoomCode,
     },
     {

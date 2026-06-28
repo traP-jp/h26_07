@@ -70,5 +70,12 @@ func registerRoutes(e *echo.Echo, cfg config.Config, db *gorm.DB) {
 		api.GET("/rooms", roomHandler.ListRooms)
 		api.GET("/rooms/:roomId/ws", roomWebSocketHandler.Connect)
 		api.POST("/rooms/:roomId/participants", roomHandler.PostParticipant)
+		api.POST("/rooms/:roomId/chats", roomHandler.PostMessage)
+		api.GET("/rooms/:roomId/chats", roomHandler.GetMessages)
+		api.PUT("/rooms/:roomId/settings", roomHandler.PutSettings)
+		api.POST("/rooms/:roomId/control/qrcode/show", roomHandler.ShowQRCode)
+		api.POST("/rooms/:roomId/control/qrcode/hide", roomHandler.HideQRCode)
+		api.POST("/rooms/:roomId/control/pick/start", roomHandler.PostPickStart)
+		api.POST("/rooms/:roomId/control/pick/cancel", roomHandler.PostPickCancel)
 	}
 }

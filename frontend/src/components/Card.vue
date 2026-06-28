@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<Props>(), {
 const joinUrl = computed(() => `./${props.roomCode}/participant`)
 const displayUrl = computed(() => `./${props.roomCode}/display`)
 const settingsUrl = computed(() => `./${props.roomCode}/settings`)
-const controlerUrl = computed(() => `./${props.roomCode}/controler`)
+const controllerUrl = computed(() => `./${props.roomCode}/controller`)
 </script>
 
 <template>
@@ -53,7 +53,7 @@ const controlerUrl = computed(() => `./${props.roomCode}/controler`)
         variant="outline"
         icon="i-lucide-gamepad"
         size="md"
-        :to="controlerUrl"
+        :to="controllerUrl"
         target="_blank"
         v-if="isAdmin"
         >操作</UButton

@@ -5,6 +5,7 @@ import type {
   DisplayGameStartedBody,
   DisplayInitializedBody,
   DisplayPickFinishedBody,
+  HideQrCodeBody,
   Message,
   MessageCreatedBody,
   PickedBall,
@@ -15,6 +16,7 @@ import type {
   PickCanceledBody,
   PickStartedBody,
   Room,
+  ShowQrCodeBody,
   User,
   WebSocketEventType,
 } from '@/api/schema'
@@ -36,14 +38,14 @@ const demoPickSteps = [
   {
     delayMs: 1800,
     pickedBall: 7,
-    newReachUserIds: ['saba', 'rurun'],
+    newReachUserIds: ['kurosaki', 'rurun'],
     newBingoUserIds: [],
   },
   {
     delayMs: 4200,
     pickedBall: 22,
     newReachUserIds: ['howard127', 'kurao'],
-    newBingoUserIds: ['saba'],
+    newBingoUserIds: ['kurosaki'],
   },
   {
     delayMs: 6600,
@@ -201,13 +203,14 @@ function initializedBody(
   connection: MockSocketConnection,
 ): ParticipantInitializedBody | DisplayInitializedBody {
   const room = roomByPathParam(connection.roomId)
+  const pickedBalls = room.state === 'waiting' ? [] : initialPickedBalls
 
   if (connection.mode === 'participant') {
     return {
       state: room.state,
       settings: room.settings,
       pickState: room.pickState,
-      pickedBalls: initialPickedBalls,
+      pickedBalls,
       bingoSummaries: room.bingoSummaries,
       reachSummaries: room.reachSummaries,
       card: mockCard,
@@ -219,7 +222,7 @@ function initializedBody(
     settings: room.settings,
     pickState: room.pickState,
     participantCount: room.participants.length,
-    pickedBalls: initialPickedBalls,
+    pickedBalls,
     qrCodeVisible: room.qrCodeVisible,
     bingoSummaries: room.bingoSummaries,
     reachSummaries: room.reachSummaries,
@@ -406,8 +409,16 @@ export const roomWebSocketHandler = roomSocket.addEventListener(
     })
 
     sendEvent(connection, 'Initialized', initializedBody(connection))
+    if (mode === 'display' && roomByPathParam(roomId).state === 'waiting') {
+      window.setTimeout(() => {
+        sendEvent<ShowQrCodeBody>(connection, 'ShowQRCode', {})
+      }, 1000)
+      window.setTimeout(() => {
+        sendEvent<HideQrCodeBody>(connection, 'HideQRCode', {})
+      }, 5000)
+    }
     scheduleDemoChatMessages(roomId)
-    if (mode === 'display') {
+    if (mode === 'display' && roomByPathParam(roomId).state !== 'waiting') {
       scheduleDemoPickEvents(connection)
     }
   },

@@ -23,4 +23,3 @@ app.use(ui)
 await useCurrentUserStore(pinia).init()
 
 app.mount('#app')
-
