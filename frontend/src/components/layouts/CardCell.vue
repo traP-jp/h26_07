@@ -12,7 +12,7 @@ const ballColor = computed(() => {
     case 'bingo':
       return '#ff9800'
     case 'reach':
-      return '#2196f3'
+      return '#f06fb1'
     case 'open':
       return '#4caf50'
     case 'closed':
