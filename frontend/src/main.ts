@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import 'transition-style/transition.min.css'
 import ui from '@nuxt/ui/vue-plugin'
 
 import './assets/css/main.css'
