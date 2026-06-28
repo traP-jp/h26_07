@@ -223,6 +223,9 @@ watch(latestEvent, (event) => {
   if (event.type === 'PickFinished') {
     cymbal.play()
   }
+  if (event.type === 'GameStarted') {
+    playGameStartCutin()
+  }
 })
 
 onMounted(async () => {
