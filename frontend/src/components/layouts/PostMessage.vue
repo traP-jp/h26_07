@@ -35,7 +35,12 @@ const post = async () => {
 <template>
   <div class="wrapper">
     <div class="newMessage">
-      <input id="newMessage" v-model="newMessage" type="text" />
+      <input
+        id="newMessage"
+        v-model="newMessage"
+        type="text"
+        placeholder="1 文字以上 500 文字以下で入力"
+      />
     </div>
     <div class="button" @click="post()">
       <svg height="30" width="30" view-box="0 0 30 30">
