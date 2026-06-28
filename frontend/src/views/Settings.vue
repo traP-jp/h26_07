@@ -287,6 +287,7 @@ const cancelEdit = () => {
             placeholder="イベントの名前・タイトルなど"
             class="w-full"
             :disabled="!editing"
+            :variant="editing ? 'outline' : 'subtle'"
           />
         </UFormField>
         <UFormField label="説明" name="description" required>
@@ -296,6 +297,7 @@ const cancelEdit = () => {
             class="w-full"
             :rows="4"
             :disabled="!editing"
+            :variant="editing ? 'outline' : 'subtle'"
           />
         </UFormField>
         <UFormField label="管理者" name="admins" required>
@@ -304,6 +306,7 @@ const cancelEdit = () => {
             placeholder="管理者のtraQ IDを入力、Enterで確定"
             class="w-full"
             :disabled="!editing"
+            :variant="editing ? 'outline' : 'subtle'"
           />
         </UFormField>
         <div class="flex justify-end">
