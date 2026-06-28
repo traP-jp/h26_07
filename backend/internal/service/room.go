@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -248,5 +249,72 @@ func (s *RoomService) HideQRCode(ctx context.Context, roomID model.RoomID, user 
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *RoomService) StartPick(ctx context.Context, roomID model.RoomID, actor model.UserID) error {
+	room, err := s.roomRepository.FindByID(ctx, roomID)
+	if err != nil {
+		return err
+	}
+
+	if err := room.StartPick(actor, time.Now()); err != nil {
+		if errors.Is(err, model.ErrNoDrawableBalls) {
+			if saveErr := s.roomRepository.Save(ctx, room); saveErr != nil {
+				return saveErr
+			}
+		}
+		return err
+	}
+
+	if err := s.roomRepository.Save(ctx, room); err != nil {
+		return err
+	}
+
+	if err := s.events.SendRoom(ctx, roomID, openapi.DisplayPickStartedEvent{
+		Type: openapi.DisplayPickStartedEventTypePickStarted,
+		Body: openapi.PickStartedBody{},
+	}); err != nil {
+		return err
+	}
+
+	if err := s.events.SendRoom(ctx, roomID, openapi.ParticipantPickStartedEvent{
+		Type: openapi.ParticipantPickStartedEventTypePickStarted,
+		Body: openapi.PickStartedBody{},
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RoomService) CancelPick(ctx context.Context, roomID model.RoomID, actor model.UserID) error {
+	room, err := s.roomRepository.FindByID(ctx, roomID)
+	if err != nil {
+		return err
+	}
+
+	if err := room.CancelPick(actor, time.Now()); err != nil {
+		return err
+	}
+
+	if err := s.roomRepository.Save(ctx, room); err != nil {
+		return err
+	}
+
+	if err := s.events.SendRoom(ctx, roomID, openapi.DisplayPickCanceledEvent{
+		Type: openapi.DisplayPickCanceledEventTypePickCanceled,
+		Body: openapi.PickCanceledBody{},
+	}); err != nil {
+		return err
+	}
+
+	if err := s.events.SendRoom(ctx, roomID, openapi.ParticipantPickCanceledEvent{
+		Type: openapi.ParticipantPickCanceledEventTypePickCanceled,
+		Body: openapi.PickCanceledBody{},
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
