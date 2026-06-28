@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BingoCardPaper from '@/components/layouts/BingoCardPaper.vue'
 import ChatContainer from '@/components/layouts/ChatContainer.vue'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 import type { RoomCode, Card, RoomId } from '@/api/schema'
 import { useRoomsStore } from '@/stores/rooms'
 import { storeToRefs } from 'pinia'
+import { Fireworks } from 'fireworks-js'
 
 const route = useRoute()
 const roomCode = route.params.roomCode as RoomCode | undefined
@@ -16,10 +17,13 @@ const roomsStore = useRoomsStore()
 const { roomsByCode } = storeToRefs(roomsStore)
 const { mode, roomId: connectedRoomId, roomState } = storeToRefs(roomWebSocketStore)
 
-const { card, latestEvent } = storeToRefs(roomWebSocketStore)
+const { card, latestCardChanges, latestEvent } = storeToRefs(roomWebSocketStore)
 
 const displayCard = ref<Card | null>(null)
+const fireworksOverlay = ref<HTMLElement | null>(null)
 const isGameWaiting = computed(() => roomState.value === 'waiting')
+let fireworks: Fireworks | undefined
+let fireworksStopTimer: ReturnType<typeof setTimeout> | undefined
 
 onMounted(async () => {
   if (!roomCode) return
@@ -36,6 +40,8 @@ onMounted(async () => {
   roomWebSocketStore.connect({ roomId: roomId.value, mode: 'participant' })
 })
 onBeforeUnmount(() => {
+  stopBingoFireworks(true)
+
   if (roomId.value && connectedRoomId.value === roomId.value) {
     roomWebSocketStore.disconnect()
   }
@@ -56,6 +62,78 @@ watch(latestEvent, async (event) => {
       break
   }
 })
+
+watch(
+  () => latestCardChanges.value?.newBingoLines,
+  async (newBingoLines) => {
+    if (!newBingoLines?.length) return
+
+    await nextTick()
+    playBingoFireworks()
+  },
+)
+
+function playBingoFireworks() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (!fireworksOverlay.value) return
+
+  stopBingoFireworks(true)
+
+  fireworks = new Fireworks(fireworksOverlay.value, {
+    autoresize: true,
+    opacity: 0.78,
+    acceleration: 1.03,
+    friction: 0.965,
+    gravity: 1.18,
+    particles: 120,
+    explosion: 8,
+    intensity: 46,
+    traceLength: 3.1,
+    traceSpeed: 8,
+    rocketsPoint: { min: 8, max: 92 },
+    hue: { min: 185, max: 345 },
+    delay: { min: 8, max: 20 },
+    brightness: { min: 84, max: 100 },
+    decay: { min: 0.011, max: 0.022 },
+    flickering: 42,
+    lineWidth: {
+      explosion: { min: 1.8, max: 4.4 },
+      trace: { min: 1.4, max: 3.4 },
+    },
+    lineStyle: 'round',
+    mouse: {
+      click: false,
+      move: false,
+      max: 0,
+    },
+    sound: {
+      enabled: false,
+      files: [],
+      volume: { min: 0, max: 0 },
+    },
+  })
+
+  fireworks.start()
+  fireworks.launch(12)
+
+  fireworksStopTimer = setTimeout(() => {
+    fireworks?.launch(9)
+    fireworksStopTimer = setTimeout(() => {
+      fireworks?.launch(6)
+      fireworksStopTimer = setTimeout(() => stopBingoFireworks(), 1900)
+    }, 520)
+  }, 420)
+}
+
+function stopBingoFireworks(dispose = false) {
+  if (fireworksStopTimer) {
+    clearTimeout(fireworksStopTimer)
+    fireworksStopTimer = undefined
+  }
+
+  fireworks?.stop(dispose)
+  fireworks = undefined
+}
 </script>
 
 <template>
@@ -68,6 +146,7 @@ watch(latestEvent, async (event) => {
       <BingoCardPaper
         v-else
         :card="displayCard"
+        :card-changes="latestCardChanges"
         cell-size="var(--participant-card-cell-size)"
         :placeholder="displayCard === null"
       />
@@ -79,6 +158,7 @@ watch(latestEvent, async (event) => {
       textarea
       variant="participant"
     />
+    <div ref="fireworksOverlay" class="participant-room__fireworks" aria-hidden="true"></div>
   </div>
 </template>
 
@@ -147,6 +227,21 @@ watch(latestEvent, async (event) => {
   font-size: 15px;
   font-weight: 700;
   line-height: 1.45;
+}
+
+.participant-room__fireworks {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.participant-room__fireworks :deep(canvas) {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 639px) {
