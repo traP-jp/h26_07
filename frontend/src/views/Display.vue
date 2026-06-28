@@ -129,6 +129,7 @@ const rollingPickedBall = ref<PickedBall | null>(null)
 const drumroll = useSoundEffect('drumroll', { loop: true })
 const cymbal = useSoundEffect('cymbal')
 let rollingTimerId: number | null = null
+const displayedBingoUserIds = new Set<string>()
 
 const isGameWaiting = computed(() => roomState.value === 'waiting')
 
@@ -222,20 +223,30 @@ watch(
 
 watch(latestEvent, (event) => {
   if (!event) return
+  if (event.type === 'Initialized') {
+    displayedBingoUserIds.clear()
+  }
   if (event.type === 'PickFinished') {
     cymbal.play()
   }
   if (event.type === 'GameStarted') {
+    displayedBingoUserIds.clear()
     playGameStartCutin()
   }
 })
 
-watch(latestNewBingos, (newBingos, oldBingos = []) => {
-  if (newBingos.length < 1 || newBingos.length <= oldBingos.length) {
+watch(latestNewBingos, (newBingos = []) => {
+  const increasedBingos = newBingos.filter((bingo) => !displayedBingoUserIds.has(bingo.user.userId))
+
+  for (const bingo of newBingos) {
+    displayedBingoUserIds.add(bingo.user.userId)
+  }
+
+  if (increasedBingos.length < 1) {
     return
   }
 
-  topText.value = String(newBingos.length) + ' players'
+  topText.value = String(increasedBingos.length) + ' players'
   bottomText.value = 'BINGO!!!'
   playGameStartCutin()
 })
