@@ -398,6 +398,10 @@ function initializedBody(
 function sendGameStarted(connection: MockSocketConnection): void {
   const room = roomByPathParam(connection.roomId)
 
+  room.state = 'playing'
+  room.pickState = 'idle'
+  room.updatedAt = new Date().toISOString()
+
   if (connection.mode === 'participant') {
     sendEvent<ParticipantGameStartedBody>(connection, 'GameStarted', { card: currentMockCard() })
     return
@@ -581,6 +585,7 @@ export const roomWebSocketHandler = roomSocket.addEventListener(
     }
     scheduleDemoChatMessages(roomId)
     if (roomByPathParam(roomId).state !== 'waiting') {
+      sendGameStarted(connection)
       scheduleDemoPickEvents(connection)
     }
   },

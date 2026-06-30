@@ -59,56 +59,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import type { RoomId } from '@/api/schema'
 import Iridescence from '@/components/backgrounds/Iridescence.vue'
 import NumberBall from '@/components/layouts/NumberBall.vue'
 import BallStateGrid from '@/components/display/BallStateGrid.vue'
-import { getBallPalette } from '@/components/display/ballPalette'
 import DisplayParticipantQrCode from '@/components/display/DisplayParticipantQrCode.vue'
 import RoomStatsBar from '@/components/display/RoomStatsBar.vue'
 import ChatContainer from '@/components/layouts/ChatContainer.vue'
-import {
-  DEFAULT_NUMBER_BALL_FAVICON,
-  updateNumberBallFavicon,
-} from '@/composables/useNumberBallFavicon'
+import { useDisplayEffects } from '@/composables/useDisplayEffects'
+import { useNumberBallFavicon } from '@/composables/useNumberBallFavicon'
 import { usePickRollingEffect } from '@/composables/usePickRollingEffect'
 import { useRoomsStore } from '@/stores/rooms'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 
 import GameStartCutin from '@/components/GameStartCutin.vue'
 
-const showCutin = ref(false)
-const showBingo = ref(false)
-const cutinKey = ref(0)
-
-const topText = ref('GAME')
-const bottomText = ref('START')
-
-async function playGameStartCutin() {
-  showBingo.value = false
-  showCutin.value = false
-  await nextTick()
-
-  cutinKey.value += 1
-  showCutin.value = true
-}
-
-function handleCutinComplete() {
-  showCutin.value = false
-}
-
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
-const { latestBall, latestEvent, pickedBalls, qrCodeVisible, roomState, bingoSummaries } =
-  storeToRefs(roomWebSocketStore)
+const { latestBall, pickedBalls, qrCodeVisible, roomState } = storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const displayPageElement = ref<HTMLElement | null>(null)
 const isFullscreen = ref(false)
 const roomId = ref<RoomId | null>(null)
 const { displayBallPalette, displayBallText } = usePickRollingEffect()
+const { bottomText, cutinKey, handleCutinComplete, showCutin, topText } = useDisplayEffects()
+useNumberBallFavicon()
 
 const isGameWaiting = computed(() => roomState.value === 'waiting')
 
@@ -124,45 +102,6 @@ async function toggleFullscreen() {
 
   await displayPageElement.value?.requestFullscreen()
 }
-
-watch(
-  latestBall,
-  (pickedBall) => {
-    if (pickedBall == null) {
-      return
-    }
-
-    updateNumberBallFavicon({
-      ballColor: getBallPalette(pickedBall).picked,
-      text: String(pickedBall),
-      textColor: '#ffffff',
-    })
-  },
-  { immediate: true },
-)
-
-watch(latestEvent, (event) => {
-  if (!event) return
-  if (event.type === 'GameStarted') {
-    playGameStartCutin()
-  }
-})
-
-watch(bingoSummaries, (summaries = [], previousSummaries = []) => {
-  if (latestEvent.value?.type === 'Initialized') {
-    return
-  }
-
-  const increasedBingoCount = summaries.length - previousSummaries.length
-
-  if (increasedBingoCount < 1) {
-    return
-  }
-
-  topText.value = String(increasedBingoCount) + ' players'
-  bottomText.value = 'BINGO!!!'
-  playGameStartCutin()
-})
 
 onMounted(async () => {
   document.addEventListener('fullscreenchange', syncFullscreenState)
@@ -183,7 +122,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', syncFullscreenState)
-  updateNumberBallFavicon(DEFAULT_NUMBER_BALL_FAVICON)
 
   if (
     roomId.value &&
