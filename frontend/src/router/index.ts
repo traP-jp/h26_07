@@ -64,11 +64,6 @@ const router = createRouter({
           component: () => import('@/views/Rurun.vue'),
         },
         {
-          path: '/chat',
-          name: 'chat',
-          component: () => import('@/views/Chat.vue'),
-        },
-        {
           path: '/:roomCode',
           redirect: (to) => `/${String(to.params.roomCode)}/participant`,
         },
