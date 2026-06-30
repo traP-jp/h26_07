@@ -60,6 +60,30 @@ const demoPickSteps = [
     newReachUserIds: ['yamada'],
     newBingoUserIds: ['howard127', 'kurao'],
   },
+  {
+    delayMs: 11000,
+    pickedBall: 2,
+    newReachUserIds: [],
+    newBingoUserIds: [],
+  },
+  {
+    delayMs: 13000,
+    pickedBall: 24,
+    newReachUserIds: [],
+    newBingoUserIds: [],
+  },
+  {
+    delayMs: 15000,
+    pickedBall: 28,
+    newReachUserIds: [],
+    newBingoUserIds: [],
+  },
+  {
+    delayMs: 17000,
+    pickedBall: 32,
+    newReachUserIds: [],
+    newBingoUserIds: [],
+  },
 ] as const
 
 const mockCards: Card[] = [
