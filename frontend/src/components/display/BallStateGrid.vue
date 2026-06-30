@@ -7,7 +7,7 @@ import { getBallPalette } from '@/components/display/ballPalette'
 
 const props = defineProps<{
   pickedBalls: PickedBall[]
-  latestPickedBall?: PickedBall | null
+  latestBall?: PickedBall | null
 }>()
 
 type BallCell = {
@@ -22,17 +22,17 @@ type BallCell = {
 const seenBallNumbers = ref<Set<PickedBall>>(new Set())
 
 watch(
-  () => [props.pickedBalls, props.latestPickedBall] as const,
-  ([pickedBalls, latestPickedBall]) => {
-    if (pickedBalls.length === 0 && latestPickedBall == null) {
+  () => [props.pickedBalls, props.latestBall] as const,
+  ([pickedBalls, latestBall]) => {
+    if (pickedBalls.length === 0 && latestBall == null) {
       seenBallNumbers.value = new Set()
       return
     }
 
     const nextSeenBallNumbers = new Set(seenBallNumbers.value)
     pickedBalls.forEach((ball) => nextSeenBallNumbers.add(ball))
-    if (latestPickedBall != null) {
-      nextSeenBallNumbers.add(latestPickedBall)
+    if (latestBall != null) {
+      nextSeenBallNumbers.add(latestBall)
     }
     seenBallNumbers.value = nextSeenBallNumbers
   },
@@ -48,7 +48,7 @@ const balls = computed<BallCell[]>(() =>
     return {
       number,
       state: isPicked ? 'open' : 'closed',
-      isLatest: props.latestPickedBall === number,
+      isLatest: props.latestBall === number,
       ballColor: isPicked ? palette.picked : palette.waiting,
       ringColor: palette.ring,
       textColor: isPicked ? '#ffffff' : palette.text,
