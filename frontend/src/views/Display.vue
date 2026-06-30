@@ -13,8 +13,8 @@
           <div class="display-page__latest-ball" aria-label="直近の抽選番号">
             <NumberBall
               class="display-page__latest-number"
-              :ball-color="displayBallColor"
-              :text-color="displayBallTextColor"
+              :ball-color="displayBallPalette.picked"
+              :text-color="displayBallPalette.text"
               :text="displayBallText"
               :size="260"
             />
@@ -102,39 +102,15 @@ function handleCutinComplete() {
 
 const roomsStore = useRoomsStore()
 const roomWebSocketStore = useRoomWebSocketStore()
-const { latestEvent, pickedBalls, qrCodeVisible, roomState, bingoSummaries } =
+const { latestBall, latestEvent, pickedBalls, qrCodeVisible, roomState, bingoSummaries } =
   storeToRefs(roomWebSocketStore)
 const props = defineProps<{ roomCode: string }>()
 const displayPageElement = ref<HTMLElement | null>(null)
 const isFullscreen = ref(false)
 const roomId = ref<RoomId | null>(null)
-const { displayBall, latestBall } = usePickRollingEffect()
+const { displayBallPalette, displayBallText } = usePickRollingEffect()
 
 const isGameWaiting = computed(() => roomState.value === 'waiting')
-
-const displayBallText = computed(() => {
-  if (roomState.value == null || roomState.value === 'waiting' || displayBall.value == null) {
-    return '?'
-  }
-
-  return String(displayBall.value)
-})
-
-const displayBallColor = computed(() => {
-  if (displayBall.value == null || displayBallText.value === '?') {
-    return '#f1f6fb'
-  }
-
-  return getBallPalette(displayBall.value).picked
-})
-
-const displayBallTextColor = computed(() => {
-  if (displayBallText.value === '?') {
-    return '#9aa8b7'
-  }
-
-  return '#ffffff'
-})
 
 function syncFullscreenState() {
   isFullscreen.value = document.fullscreenElement === displayPageElement.value
