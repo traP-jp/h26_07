@@ -96,13 +96,7 @@ export const mockRooms: Room[] = [
         joinedAt: '2026-06-27T11:02:00.000Z',
       },
     ],
-    bingoSummaries: [
-      {
-        user: { userId: 'rurun' },
-        bingoOrders: [1],
-        createdAt: '2026-06-27T11:08:00.000Z',
-      },
-    ],
+    bingoSummaries: [],
     reachSummaries: [
       {
         user: { userId: 'howard127' },

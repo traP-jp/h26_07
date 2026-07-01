@@ -9,6 +9,8 @@ import type {
   ReachSummary,
 } from '@/api/schema'
 import { apiClient } from '@/api/apiClient'
+import MessageContainer from '@/components/chat/MessageContainer.vue'
+import PostMessage from '@/components/chat/PostMessage.vue'
 import { useRoomWebSocketStore } from '@/stores/roomWebSocket'
 import { useRoomsStore } from '@/stores/rooms'
 import { storeToRefs } from 'pinia'
@@ -219,7 +221,7 @@ watch(participantChatOpen, (open) => {
 
 <template>
   <div v-if="room.variant === 'participant'" class="participant-chat">
-    <section class="participant-chat__desktop" aria-label="チャット">
+    <section class="participant-chat__desktop">
       <div class="participant-chat__header">Chat</div>
       <div ref="participantInlineChatContainer" class="chat-container chat-container--participant">
         <div class="chat-container__messages">
@@ -248,7 +250,7 @@ watch(participantChatOpen, (open) => {
         :class="{ 'participant-chat__mobile-peek--closing': participantChatClosing }"
         type="button"
       >
-        <span class="participant-chat__mobile-handle" aria-hidden="true"></span>
+        <span class="participant-chat__mobile-handle"></span>
         <span class="participant-chat__mobile-peek-row">
           <span class="participant-chat__mobile-label">Chat</span>
           <span class="participant-chat__mobile-message">{{ latestMessagePreview }}</span>
@@ -256,7 +258,7 @@ watch(participantChatOpen, (open) => {
       </button>
 
       <template #content>
-        <section class="participant-chat__drawer" aria-label="チャット">
+        <section class="participant-chat__drawer">
           <div class="participant-chat__drawer-header">
             <span>Chat</span>
             <UButton
@@ -264,7 +266,6 @@ watch(participantChatOpen, (open) => {
               color="neutral"
               variant="ghost"
               size="sm"
-              aria-label="閉じる"
               @click="participantChatOpen = false"
             />
           </div>
