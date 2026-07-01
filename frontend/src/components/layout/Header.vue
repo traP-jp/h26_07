@@ -26,7 +26,6 @@ const router = useRouter()
         icon="i-lucide-plus"
         to="/new"
         target="_blank"
-        aria-label="新しいルームを作成"
         class="sm:hidden rounded-full"
       ></UButton>
       <UButton icon="i-lucide-plus" to="/new" target="_blank" class="hidden sm:inline-flex"

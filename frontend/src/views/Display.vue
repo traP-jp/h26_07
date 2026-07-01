@@ -10,7 +10,7 @@
       />
       <div class="display-page__stage">
         <div class="display-page__content">
-          <div class="display-page__latest-ball" aria-label="直近の抽選番号">
+          <div class="display-page__latest-ball">
             <NumberBall
               class="display-page__latest-number"
               :ball-color="displayBallPalette.picked"
@@ -18,7 +18,7 @@
               :text="displayBallText"
             />
           </div>
-          <div v-if="isGameWaiting" class="display-page__waiting-panel" role="status">
+          <div v-if="isGameWaiting" class="display-page__waiting-panel">
             <p class="display-page__waiting-title">ゲームはまだ始まっていません</p>
             <p class="display-page__waiting-text">参加者の準備ができるまでお待ちください</p>
           </div>

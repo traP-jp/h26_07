@@ -159,7 +159,7 @@ function stopBingoFireworks(dispose = false) {
 <template>
   <div class="participant-room">
     <div class="participant-room__card">
-      <div v-if="isGameWaiting" class="participant-room__waiting" role="status">
+      <div v-if="isGameWaiting" class="participant-room__waiting">
         <p class="participant-room__waiting-title">ゲームはまだ始まっていません</p>
         <p class="participant-room__waiting-text">開始されるまでお待ちください</p>
       </div>
@@ -179,7 +179,7 @@ function stopBingoFireworks(dispose = false) {
       variant="participant"
     />
 
-    <div ref="fireworksOverlay" class="participant-room__fireworks" aria-hidden="true"></div>
+    <div ref="fireworksOverlay" class="participant-room__fireworks"></div>
   </div>
 </template>
 
@@ -216,9 +216,8 @@ function stopBingoFireworks(dispose = false) {
 }
 
 .participant-room__waiting {
-  box-sizing: border-box;
-  width: min(100%, 420px);
-  padding: 28px 24px;
+  width: 60%;
+  padding: 30px;
   border: 1px solid rgb(255 255 255 / 0.7);
   border-radius: 14px;
   background: rgb(255 255 255 / 0.82);

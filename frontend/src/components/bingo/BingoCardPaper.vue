@@ -187,7 +187,6 @@ watch(
       v-if="activeEffect?.mode === 'bingo'"
       :key="`celebration-${activeEffectKey}`"
       class="bingo-celebration"
-      aria-hidden="true"
     >
       <span
         v-for="particle in celebrationParticles"
